@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>HALO Workflow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* Global */
+    --layer-lr: 36px;
+    --layer-radius: 18px;
+    --gap-between-layers: 44px;
+
+    /* Harness */
+    --h-top: 85px;
+    --h-height: 260px;
+    --h-pad-v: 12px;
+    --h-pad-h: 16px;
+    --phase-w: 130px;
+    --phase-h: 70px;
+    --phase-gap: 28px;
+
+    /* Agents */
+    --a-pad-v: 10px;
+    --a-pad-h: 12px;
+    --card-w: 178px;
+    --card-gap: 8px;
+    --card-pad: 10px;
+
+    /* Artifacts */
+    --f-height: 190px;
+    --f-pad-v: 10px;
+    --f-pad-h: 16px;
+    --folder-gap: 10px;
+    --folder-pad: 8px;
+
+    /* Connector */
+    --conn-h: 44px;
+
+    /* Loopback */
+    --lb-height: 80px;
+  }
+
+  body {
+    width: 1920px;
+    height: 1080px;
+    background: #f8faff;
+    font-family: 'Inter', sans-serif;
+    color: #1e293b;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ===== CONTROL PANEL ===== */
+  .ctrl-toggle {
+    position: fixed;
+    top: 12px; right: 12px;
+    width: 36px; height: 36px;
+    background: #1e40af; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 18px; cursor: pointer;
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 10px rgba(30,64,175,0.3);
+    transition: background 0.15s;
+  }
+
+  .ctrl-toggle:hover { background: #1d4ed8; }
+
+  .ctrl-panel {
+    position: fixed;
+    top: 56px; right: 12px;
+    width: 280px;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 999;
+    padding: 16px;
+    display: none;
+    font-size: 12px;
+  }
+
+  .ctrl-panel.open { display: block; }
+
+  .ctrl-panel h3 {
+    font-size: 13px; font-weight: 700; color: #1e40af;
+    margin: 12px 0 6px; padding-bottom: 4px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .ctrl-panel h3:first-child { margin-top: 0; }
+
+  .ctrl-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin: 5px 0;
+    gap: 8px;
+  }
+
+  .ctrl-row label {
+    font-size: 11px; font-weight: 500; color: #475569;
+    white-space: nowrap; min-width: 90px;
+  }
+
+  .ctrl-row input[type="range"] {
+    flex: 1; height: 4px;
+    -webkit-appearance: none;
+    background: #e2e8f0; border-radius: 2px;
+    outline: none;
+  }
+
+  .ctrl-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: #3b82f6; border-radius: 50%;
+    cursor: pointer; border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .ctrl-row .val {
+    font-size: 10px; font-weight: 600; color: #3b82f6;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 32px; text-align: right;
+  }
+
+  .ctrl-actions {
+    display: flex; gap: 6px; margin-top: 14px;
+    padding-top: 10px; border-top: 1px solid #e2e8f0;
+  }
+
+  .ctrl-actions button {
+    flex: 1; padding: 6px 0;
+    font-size: 11px; font-weight: 600;
+    border-radius: 6px; cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s;
+  }
+
+  .btn-reset { background: #f1f5f9; color: #475569; }
+  .btn-reset:hover { background: #e2e8f0; }
+  .btn-export { background: #1e40af; color: #fff; border-color: #1e40af; }
+  .btn-export:hover { background: #1d4ed8; }
+
+  /* ===== HEADER ===== */
+  .header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 80px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 60px;
+    z-index: 10;
+  }
+
+  .header-left { display: flex; align-items: baseline; gap: 14px; }
+
+  .header-left h1 {
+    font-size: 28px; font-weight: 800; color: #1e40af; letter-spacing: -0.5px;
+  }
+
+  .header-left .version {
+    font-size: 11px; font-weight: 600; color: #3b82f6;
+    border: 1.5px solid #bfdbfe; background: #eff6ff;
+    padding: 2px 10px; border-radius: 10px;
+  }
+
+  .header-right {
+    font-size: 12px; color: #64748b; font-weight: 500;
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-right: 50px;
+  }
+
+  /* ===== LAYER LABELS ===== */
+  .layer-label {
+    position: absolute; left: 14px;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 9px; font-weight: 800;
+    letter-spacing: 3px; text-transform: uppercase;
+    z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .ll-harness   { color: #2563eb; }
+  .ll-agents    { color: #1d4ed8; }
+  .ll-artifacts { color: #1e40af; }
+
+  /* ===== LAYER HEADER ===== */
+  .layer-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+
+  .layer-header .icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #fff;
+  }
+
+  .icon-harness   { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+  .icon-agents    { background: linear-gradient(135deg, #1d4ed8, #60a5fa); }
+  .icon-artifacts { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+
+  .layer-header h2 { font-size: 15px; font-weight: 700; color: #1e40af; }
+
+  .layer-header .tag {
+    font-size: 9px; font-weight: 600;
+    background: #fff; border: 1px solid #bfdbfe; color: #2563eb;
+    padding: 2px 8px; border-radius: 6px;
+  }
+
+  /* ===== LAYER 1: HARNESS ===== */
+  .harness-layer {
+    position: absolute;
+    top: var(--h-top);
+    left: var(--layer-lr); right: var(--layer-lr);
+    height: var(--h-height);
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1.5px solid #bfdbfe;
+    border-radius: var(--layer-radius);
+    padding: var(--h-pad-v) var(--h-pad-h);
+    box-shadow: 0 4px 24px rgba(37,99,235,0.06);
+  }
+
+  .phase-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 4px;
+    position: relative; z-index: 3;
+  }
+
+  .phase-node {
+    width: var(--phase-w); height: var(--phase-h);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #fff; cursor: default;
+    transition: transform 0.15s;
+    position: relative; flex-shrink: 0;
+  }
+
+  .phase-node:hover { transform: scale(1.05); z-index: 5; }
+
+  .phase-node .p-icon { font-size: 18px; margin-bottom: 2px; }
+  .phase-node .p-num  { font-size: 9px; font-weight: 700; opacity: 0.5; }
+  .phase-node .p-name { font-size: 10px; font-weight: 700; text-align: center; line-height: 1.25; }
+
+  .pn-1 { border: 2px solid #818cf8; color: #4338ca; box-shadow: 0 2px 8px rgba(129,140,248,0.12); }
+  .pn-2 { border: 2px solid #60a5fa; color: #1d4ed8; box-shadow: 0 2px 8px rgba(96,165,250,0.12); }
+  .pn-3 { border: 2px solid #38bdf8; color: #0369a1; box-shadow: 0 2px 8px rgba(56,189,248,0.12); }
+  .pn-4 { border: 2px solid #f87171; color: #b91c1c; box-shadow: 0 2px 8px rgba(248,113,113,0.12); }
+  .pn-5 { border: 2px solid #4ade80; color: #166534; box-shadow: 0 2px 8px rgba(74,222,128,0.12); }
+  .pn-6 { border: 2px solid #fbbf24; color: #92400e; box-shadow: 0 2px 8px rgba(251,191,36,0.12); }
+  .pn-7 { border: 2px solid #34d399; color: #065f46; box-shadow: 0 2px 8px rgba(52,211,153,0.12); }
+  .pn-8 { border: 2px solid #fb923c; color: #9a3412; box-shadow: 0 2px 8px rgba(251,146,60,0.12); }
+  .pn-9 { border: 2px solid #818cf8; color: #4338ca; box-shadow: 0 2px 8px rgba(129,140,248,0.12); }
+
+  .p-arrow {
+    width: var(--phase-gap); height: 0;
+    border-top: 2px solid #93c5fd;
+    position: relative; flex-shrink: 0;
+  }
+
+  .p-arrow::after {
+    content: '';
+    position: absolute; right: -1px; top: -5px;
+    border: 5px solid transparent;
+    border-left: 6px solid #93c5fd;
+  }
+
+  /* Judge node in harness (special styling) */
+  .pn-judge {
+    border: 2.5px solid #f59e0b;
+    color: #92400e;
+    background: linear-gradient(135deg, #fffefb, #fffbeb);
+    box-shadow: 0 2px 10px rgba(245,158,11,0.18);
+  }
+
+  .pn-judge .p-name {
+    font-size: 9px;
+  }
+
+  /* LOOPBACK arrows SVG inside harness */
+  .loopback-arrows-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* RTM timeline SVG inside harness */
+  .rtm-timeline-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* ===== CONNECTOR BANDS ===== */
+  .connector-band {
+    position: absolute;
+    left: var(--layer-lr); right: var(--layer-lr);
+    height: var(--conn-h);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+
+  .connector-line-wrap {
+    flex: 1; position: relative; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .connector-line-wrap svg { width: 100%; height: 100%; }
+
+  .connector-label {
+    position: absolute;
+    font-size: 10px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b; background: #f8faff;
+    padding: 3px 12px; border-radius: 6px;
+    border: 1px solid #e2e8f0; white-space: nowrap;
+    top: 50%; transform: translateY(-50%);
+  }
+
+  .connector-label em { color: #2563eb; font-style: normal; font-weight: 700; }
+
+  /* ===== LAYER 2: AI AGENTS ===== */
+  .agents-layer {
+    position: absolute;
+    left: var(--layer-lr); right: var(--layer-lr);
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border: 1.5px solid #c7d2fe;
+    border-radius: var(--layer-radius);
+    padding: var(--a-pad-v) var(--a-pad-h);
+    box-shadow: 0 4px 24px rgba(99,102,241,0.06);
+  }
+
+  .agents-grid {
+    display: flex;
+    gap: var(--card-gap);
+    justify-content: center; align-items: flex-start;
+    margin-top: 4px;
+  }
+
+  .agent-card {
+    width: var(--card-w); background: #fff;
+    border: 1.5px solid #c7d2fe; border-radius: 10px;
+    padding: var(--card-pad);
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .agent-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(99,102,241,0.1);
+  }
+
+  .agent-card .agent-phase {
+    font-size: 9px; font-weight: 700; color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace; margin-bottom: 3px;
+  }
+
+  .agent-card .agent-name {
+    font-size: 12px; font-weight: 700; color: #1e293b;
+    margin-bottom: 5px; line-height: 1.3;
+  }
+
+  .agent-card .agent-type {
+    font-size: 9px; font-weight: 600;
+    padding: 1px 7px; border-radius: 5px;
+    display: inline-block; margin-bottom: 6px;
+  }
+
+  .type-analyst    { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+  .type-explorer   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .type-architect  { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
+  .type-implementer{ background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .type-runner     { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .type-reviewer   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+  .type-writer     { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 3px; }
+
+  .tool-tag {
+    font-size: 8px; font-family: 'JetBrains Mono', monospace;
+    padding: 1px 5px; border-radius: 3px;
+    background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+  }
+
+  .parallel-badge {
+    position: absolute; top: -7px; right: -7px;
+    width: 26px; height: 26px;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; color: #fff;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    border: 2px solid #fff;
+  }
+
+  .tdd-badge { display: flex; gap: 3px; margin-top: 5px; }
+
+  .tdd-red {
+    font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+    background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+  }
+
+  .tdd-green {
+    font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+    background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+  }
+
+  /* ===== LAYER 3: ARTIFACTS ===== */
+  .artifacts-layer {
+    position: absolute;
+    left: var(--layer-lr); right: var(--layer-lr);
+    height: var(--f-height);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1.5px solid #bae6fd;
+    border-radius: var(--layer-radius);
+    padding: var(--f-pad-v) var(--f-pad-h);
+    box-shadow: 0 4px 24px rgba(14,165,233,0.06);
+  }
+
+  .artifacts-grid {
+    display: flex;
+    gap: var(--folder-gap);
+    justify-content: center; align-items: stretch;
+    margin-top: 3px;
+  }
+
+  .artifact-folder {
+    flex: 1; max-width: 280px;
+    background: #fff; border: 1.5px solid #bae6fd;
+    border-radius: 9px;
+    padding: var(--folder-pad) calc(var(--folder-pad) + 4px);
+    position: relative;
+  }
+
+  .folder-name {
+    font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #0369a1; margin-bottom: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .folder-name .fi { font-size: 14px; }
+
+  .file-list {
+    font-size: 9px; font-family: 'JetBrains Mono', monospace;
+    color: #94a3b8; line-height: 1.65;
+  }
+
+  .file-list .hl  { color: #64748b; font-weight: 500; }
+  .file-list .rtm { color: #d97706; font-weight: 700; }
+
+  .rtm-callout {
+    position: absolute; bottom: 8px; right: 12px;
+    font-size: 8px; font-weight: 700; color: #d97706;
+    background: #fffbeb; border: 1px solid #fde68a;
+    padding: 1px 7px; border-radius: 4px;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 46px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; z-index: 10;
+  }
+
+  .footer-stats { display: flex; gap: 32px; }
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-value { font-size: 20px; font-weight: 800; color: #1e40af; }
+  .stat-label { font-size: 9px; color: #64748b; font-weight: 500; line-height: 1.3; }
+
+  .footer-pills { display: flex; gap: 8px; }
+
+  .pill {
+    font-size: 9px; font-weight: 700;
+    padding: 3px 10px; border-radius: 6px; letter-spacing: 0.3px;
+  }
+
+  .pill-red   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .pill-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .pill-amber { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  .pill-blue  { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+  .pill-slate { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+  /* Scrollbar for panel */
+  .ctrl-panel::-webkit-scrollbar { width: 4px; }
+  .ctrl-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ===== CONTROL PANEL ===== -->
+<button class="ctrl-toggle" id="ctrlToggle" title="Layout Controls">&#9881;</button>
+<div class="ctrl-panel" id="ctrlPanel">
+  <h3>Global</h3>
+  <div class="ctrl-row">
+    <label>Layer L/R margin</label>
+    <input type="range" min="10" max="80" data-var="--layer-lr" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Layer radius</label>
+    <input type="range" min="0" max="30" data-var="--layer-radius" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Layer gap</label>
+    <input type="range" min="10" max="80" data-var="--gap-between-layers" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <h3>Harness Layer</h3>
+  <div class="ctrl-row">
+    <label>Top offset</label>
+    <input type="range" min="40" max="150" data-var="--h-top" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Height</label>
+    <input type="range" min="180" max="360" data-var="--h-height" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Padding V</label>
+    <input type="range" min="4" max="30" data-var="--h-pad-v" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Padding H</label>
+    <input type="range" min="4" max="50" data-var="--h-pad-h" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Phase width</label>
+    <input type="range" min="80" max="180" data-var="--phase-w" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Phase height</label>
+    <input type="range" min="50" max="110" data-var="--phase-h" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Arrow width</label>
+    <input type="range" min="8" max="60" data-var="--phase-gap" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <h3>AI Agents Layer</h3>
+  <div class="ctrl-row">
+    <label>Padding V</label>
+    <input type="range" min="4" max="30" data-var="--a-pad-v" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Padding H</label>
+    <input type="range" min="4" max="50" data-var="--a-pad-h" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Card width</label>
+    <input type="range" min="120" max="220" data-var="--card-w" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Card gap</label>
+    <input type="range" min="2" max="24" data-var="--card-gap" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Card padding</label>
+    <input type="range" min="4" max="20" data-var="--card-pad" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <h3>Artifacts Layer</h3>
+  <div class="ctrl-row">
+    <label>Height</label>
+    <input type="range" min="120" max="280" data-var="--f-height" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Padding V</label>
+    <input type="range" min="4" max="30" data-var="--f-pad-v" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Padding H</label>
+    <input type="range" min="4" max="50" data-var="--f-pad-h" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Folder gap</label>
+    <input type="range" min="2" max="30" data-var="--folder-gap" data-unit="px">
+    <span class="val"></span>
+  </div>
+  <div class="ctrl-row">
+    <label>Folder padding</label>
+    <input type="range" min="4" max="20" data-var="--folder-pad" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <h3>Connector</h3>
+  <div class="ctrl-row">
+    <label>Connector height</label>
+    <input type="range" min="10" max="80" data-var="--conn-h" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <h3>Loopback</h3>
+  <div class="ctrl-row">
+    <label>Arrow height</label>
+    <input type="range" min="30" max="160" data-var="--lb-height" data-unit="px">
+    <span class="val"></span>
+  </div>
+
+  <div class="ctrl-actions">
+    <button class="btn-reset" id="btnReset">Reset</button>
+    <button class="btn-export" id="btnExport">Copy CSS</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>HALO Workflow</h1>
+    <span class="version">Harness-Agentic Loopback Orchestration</span>
+  </div>
+  <div class="header-right">AI Orchestration &times; Harness Engineering</div>
+</div>
+
+<!-- LAYER LABELS -->
+<div class="layer-label ll-harness" id="llHarness">HARNESS</div>
+<div class="layer-label ll-agents" id="llAgents">AI AGENTS</div>
+<div class="layer-label ll-artifacts" id="llArtifacts">ARTIFACTS</div>
+
+<!-- ===== LAYER 1: HARNESS ===== -->
+<div class="harness-layer" id="harnessLayer">
+  <div class="layer-header">
+    <div class="icon icon-harness">&#9881;</div>
+    <h2>Orchestrator &mdash; State Machine</h2>
+    <span class="tag">Main Context</span>
+    <span class="tag">Router + RTM Judge</span>
+  </div>
+
+  <div class="phase-row" id="phaseRow">
+    <div class="phase-node pn-1" id="pn1"><div class="p-icon">&#128203;</div><div class="p-num">P1</div><div class="p-name">Requirements</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-2"><div class="p-icon">&#128269;</div><div class="p-num">P2</div><div class="p-name">Exploration</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-3" id="pn3"><div class="p-icon">&#128208;</div><div class="p-num">P3</div><div class="p-name">Architecture</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-4" id="pn4"><div class="p-icon">&#128308;</div><div class="p-num">P4</div><div class="p-name">Unit Test<br><span style="font-size:8px;opacity:0.6">TDD RED</span></div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-5" id="pn5"><div class="p-icon">&#128994;</div><div class="p-num">P5</div><div class="p-name">Implement<br><span style="font-size:8px;opacity:0.6">TDD GREEN</span></div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-6" id="pn6"><div class="p-icon">&#128256;</div><div class="p-num">P6</div><div class="p-name">Integration<br>&amp; E2E</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-7" id="pn7"><div class="p-icon">&#9654;</div><div class="p-num">P7</div><div class="p-name">Test<br>Execution</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-8"><div class="p-icon">&#128270;</div><div class="p-num">P8</div><div class="p-name">Code<br>Review</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-judge" id="pnJudge"><div class="p-icon">&#128260;</div><div class="p-num">JUDGE</div><div class="p-name">RTM<br>Loopback</div></div>
+    <div class="p-arrow"></div>
+    <div class="phase-node pn-9"><div class="p-icon">&#128209;</div><div class="p-num">P9</div><div class="p-name">Completion<br>Report</div></div>
+  </div>
+
+  <!-- RTM timeline bar -->
+  <svg class="rtm-timeline-svg" id="rtmTimelineSvg"></svg>
+  <!-- LOOPBACK arrows drawn dynamically from Judge to target phases -->
+  <svg class="loopback-arrows-svg" id="lbArrowsSvg"></svg>
+</div>
+
+<!-- CONNECTOR 1 -->
+<div class="connector-band" id="conn1">
+  <div class="connector-line-wrap">
+    <svg viewBox="0 0 1800 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="200" y1="0" x2="200" y2="50" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="900" y1="0" x2="900" y2="50" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="1600" y1="0" x2="1600" y2="50" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="200" y1="25" x2="1600" y2="25" stroke="#93c5fd" stroke-width="1" opacity="0.35"/>
+      <polygon points="197,46 200,54 203,46" fill="#93c5fd"/>
+      <polygon points="897,46 900,54 903,46" fill="#93c5fd"/>
+      <polygon points="1597,46 1600,54 1603,46" fill="#93c5fd"/>
+    </svg>
+    <div class="connector-label">spawn() &rarr; <em>return result</em></div>
+  </div>
+</div>
+
+<!-- ===== LAYER 2: AI AGENTS ===== -->
+<div class="agents-layer" id="agentsLayer">
+  <div class="layer-header">
+    <div class="icon icon-agents">&#129302;</div>
+    <h2>Sub-Agents &mdash; Phase-Isolated Execution</h2>
+    <span class="tag">Context Isolated</span>
+    <span class="tag">Tool-Restricted</span>
+  </div>
+
+  <div class="agents-grid">
+    <div class="agent-card">
+      <div class="agent-phase">P1</div>
+      <div class="agent-name">Requirements<br>Analyst</div>
+      <span class="agent-type type-analyst">analyst</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Glob</span>
+        <span class="tool-tag">Grep</span><span class="tool-tag">Write</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="parallel-badge">&times;3</div>
+      <div class="agent-phase">P2</div>
+      <div class="agent-name">Code<br>Explorer</div>
+      <span class="agent-type type-explorer">explorer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Glob</span>
+        <span class="tool-tag">Grep</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="parallel-badge">&times;3</div>
+      <div class="agent-phase">P3</div>
+      <div class="agent-name">Code<br>Architect</div>
+      <span class="agent-type type-architect">architect</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Glob</span>
+        <span class="tool-tag">Grep</span><span class="tool-tag">Write</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-phase">P4</div>
+      <div class="agent-name">Test Engineer<br><span style="font-size:9px;opacity:0.6">(Unit Test)</span></div>
+      <span class="agent-type type-implementer">implementer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Write</span>
+        <span class="tool-tag">Edit</span><span class="tool-tag">Bash</span>
+      </div>
+      <div class="tdd-badge"><span class="tdd-red">RED</span></div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-phase">P5</div>
+      <div class="agent-name">Implementer</div>
+      <span class="agent-type type-implementer">implementer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Write</span>
+        <span class="tool-tag">Edit</span><span class="tool-tag">Bash</span>
+      </div>
+      <div class="tdd-badge"><span class="tdd-green">GREEN</span></div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-phase">P6</div>
+      <div class="agent-name">Test Engineer<br><span style="font-size:9px;opacity:0.6">(IT, E2E Test)</span></div>
+      <span class="agent-type type-implementer">implementer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Write</span>
+        <span class="tool-tag">Edit</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-phase">P7</div>
+      <div class="agent-name">Test<br>Runner</div>
+      <span class="agent-type type-runner">runner</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Bash</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="parallel-badge">&times;3</div>
+      <div class="agent-phase">P8</div>
+      <div class="agent-name">Code<br>Reviewer</div>
+      <span class="agent-type type-reviewer">reviewer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Glob</span>
+        <span class="tool-tag">Grep</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-phase">P9</div>
+      <div class="agent-name">Report<br>Writer</div>
+      <span class="agent-type type-writer">writer</span>
+      <div class="tools">
+        <span class="tool-tag">Read</span><span class="tool-tag">Write</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONNECTOR 2 -->
+<div class="connector-band" id="conn2">
+  <div class="connector-line-wrap">
+    <svg viewBox="0 0 1800 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="200" y1="0" x2="200" y2="50" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="900" y1="0" x2="900" y2="50" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="1600" y1="0" x2="1600" y2="50" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="200" y1="25" x2="1600" y2="25" stroke="#7dd3fc" stroke-width="1" opacity="0.35"/>
+      <polygon points="197,46 200,54 203,46" fill="#7dd3fc"/>
+      <polygon points="897,46 900,54 903,46" fill="#7dd3fc"/>
+      <polygon points="1597,46 1600,54 1603,46" fill="#7dd3fc"/>
+    </svg>
+    <div class="connector-label">Read / Write &mdash; <em>File = Agent Interface</em></div>
+  </div>
+</div>
+
+<!-- ===== LAYER 3: ARTIFACTS ===== -->
+<div class="artifacts-layer" id="artifactsLayer">
+  <div class="layer-header">
+    <div class="icon icon-artifacts">&#128194;</div>
+    <h2>Artifacts &mdash; File System as Interface</h2>
+    <span class="tag">Single Source of Truth</span>
+  </div>
+
+  <div class="artifacts-grid">
+    <div class="artifact-folder">
+      <div class="folder-name"><span class="fi">&#128196;</span> docs/</div>
+      <div class="file-list">
+        <span class="hl">requirements/</span>feature.md<br>
+        <span class="rtm">requirements/feature-rtm.md</span><br>
+        <span class="hl">architecture/</span>feature.md
+      </div>
+      <div class="rtm-callout">&#9733; RTM = Source of Truth</div>
+    </div>
+    <div class="artifact-folder">
+      <div class="folder-name"><span class="fi">&#128295;</span> tests/</div>
+      <div class="file-list">
+        <span class="hl">unit/</span>feature.test.ts<br>
+        <span class="hl">integration/</span>feature.int.test.ts<br>
+        <span class="hl">e2e/</span>feature.e2e.test.ts
+      </div>
+    </div>
+    <div class="artifact-folder">
+      <div class="folder-name"><span class="fi">&#128187;</span> src/</div>
+      <div class="file-list">
+        <span class="hl">feature/</span>index.ts<br>
+        <span class="hl">feature/</span>service.ts<br>
+        <span class="hl">feature/</span>types.ts
+      </div>
+    </div>
+    <div class="artifact-folder">
+      <div class="folder-name"><span class="fi">&#9881;</span> .workflow/</div>
+      <div class="file-list">
+        <span class="hl">state.json</span><br>
+        <span class="hl">loopback-context.md</span><br>
+        <span class="hl">phase-results/</span>*.md
+      </div>
+    </div>
+    <div class="artifact-folder">
+      <div class="folder-name"><span class="fi">&#128209;</span> reports/</div>
+      <div class="file-list">
+        <span class="hl">feature-completion.md</span><br>
+        <span style="color:#94a3b8">test results</span><br>
+        <span style="color:#94a3b8">review summary</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-stats">
+    <div class="stat"><span class="stat-value">9</span><span class="stat-label">Phases</span></div>
+    <div class="stat"><span class="stat-value">9</span><span class="stat-label">Sub-agents<br>(max 15 w/ parallel)</span></div>
+    <div class="stat"><span class="stat-value">3</span><span class="stat-label">Layers<br>Harness / Agent / File</span></div>
+    <div class="stat"><span class="stat-value">5</span><span class="stat-label">Max<br>LOOPBACKs</span></div>
+  </div>
+  <div class="footer-pills">
+    <span class="pill pill-red">TDD RED</span>
+    <span class="pill pill-green">TDD GREEN</span>
+    <span class="pill pill-amber">RTM Traceability</span>
+    <span class="pill pill-blue">Context Isolation</span>
+    <span class="pill pill-slate">File = Interface</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  const root = document.documentElement;
+  const toggle = document.getElementById('ctrlToggle');
+  const panel  = document.getElementById('ctrlPanel');
+  const sliders = panel.querySelectorAll('input[type="range"]');
+
+  // Defaults from :root
+  const defaults = {};
+  sliders.forEach(s => {
+    const v = s.dataset.var;
+    const raw = getComputedStyle(root).getPropertyValue(v).trim();
+    const num = parseInt(raw);
+    defaults[v] = num;
+    s.value = num;
+    s.nextElementSibling.textContent = num + 'px';
+  });
+
+  // Toggle panel
+  toggle.addEventListener('click', () => panel.classList.toggle('open'));
+
+  // Layout recalc
+  function recalcLayout() {
+    const hTop    = int('--h-top');
+    const hHeight = int('--h-height');
+    const gap     = int('--gap-between-layers');
+    const connH   = int('--conn-h');
+    const fHeight  = int('--f-height');
+
+    const conn1Top   = hTop + hHeight;
+    const agentsTop  = conn1Top + connH;
+    // auto-calc agents height from content
+    const agentsEl   = document.getElementById('agentsLayer');
+    agentsEl.style.top = agentsTop + 'px';
+    agentsEl.style.height = 'auto';
+    const agentsH = agentsEl.offsetHeight;
+
+    const conn2Top = agentsTop + agentsH;
+    document.getElementById('conn1').style.top = conn1Top + 'px';
+    document.getElementById('conn2').style.top = conn2Top + 'px';
+
+    const artifactsTop = conn2Top + connH;
+    document.getElementById('artifactsLayer').style.top = artifactsTop + 'px';
+
+    // Layer labels
+    document.getElementById('llHarness').style.top = hTop + 'px';
+    document.getElementById('llHarness').style.height = hHeight + 'px';
+    document.getElementById('llAgents').style.top = agentsTop + 'px';
+    document.getElementById('llAgents').style.height = agentsH + 'px';
+    document.getElementById('llArtifacts').style.top = artifactsTop + 'px';
+    document.getElementById('llArtifacts').style.height = fHeight + 'px';
+  }
+
+  function int(varName) {
+    return parseInt(getComputedStyle(root).getPropertyValue(varName));
+  }
+
+  // Slider events
+  sliders.forEach(s => {
+    s.addEventListener('input', () => {
+      const val = s.value;
+      const unit = s.dataset.unit || 'px';
+      root.style.setProperty(s.dataset.var, val + unit);
+      s.nextElementSibling.textContent = val + unit;
+      recalcLayout();
+    });
+  });
+
+  // Reset
+  document.getElementById('btnReset').addEventListener('click', () => {
+    sliders.forEach(s => {
+      const v = s.dataset.var;
+      const d = defaults[v];
+      const unit = s.dataset.unit || 'px';
+      s.value = d;
+      root.style.setProperty(v, d + unit);
+      s.nextElementSibling.textContent = d + unit;
+    });
+    recalcLayout();
+  });
+
+  // Export CSS
+  document.getElementById('btnExport').addEventListener('click', () => {
+    let css = ':root {\n';
+    sliders.forEach(s => {
+      const val = getComputedStyle(root).getPropertyValue(s.dataset.var).trim();
+      css += `  ${s.dataset.var}: ${val};\n`;
+    });
+    css += '}';
+    navigator.clipboard.writeText(css).then(() => {
+      const btn = document.getElementById('btnExport');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy CSS', 1500);
+    });
+  });
+
+  // Initial layout
+  recalcLayout();
+
+  // Draw LOOPBACK arrows inside harness: Judge node → target phase nodes
+  function drawLoopbackArrows() {
+    const layer = document.getElementById('harnessLayer');
+    const svg = document.getElementById('lbArrowsSvg');
+    const judge = document.getElementById('pnJudge');
+    if (!layer || !svg || !judge) return;
+
+    const lr = layer.getBoundingClientRect();
+    const w = lr.width;
+    const h = lr.height;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const lbH = int('--lb-height');
+
+    function pos(el) {
+      const rc = el.getBoundingClientRect();
+      return {
+        cx: rc.left - lr.left + rc.width / 2,
+        bottom: rc.top - lr.top + rc.height
+      };
+    }
+
+    const j = pos(judge);
+
+    // 3 loopback targets (no P1 — requirements don't change via LOOPBACK)
+    const targets = [
+      { id: 'pn3', label: 'Arch Issue',  color: '#7c3aed', opacity: 0.55, rank: 0 },
+      { id: 'pn5', label: 'Impl Bug',    color: '#dc2626', opacity: 0.7,  rank: 1 },
+      { id: 'pn6', label: 'Test Design', color: '#d97706', opacity: 0.6,  rank: 2 },
+    ];
+
+    const spacing = targets.length > 1 ? lbH / (targets.length + 1) : lbH / 2;
+    let paths = '';
+    const cr = 8;
+
+    targets.forEach((t, i) => {
+      const el = document.getElementById(t.id);
+      if (!el) return;
+      const p = pos(el);
+      const belowY = j.bottom + lbH - spacing * i;
+
+      paths += `<path d="
+        M ${j.cx} ${j.bottom}
+        L ${j.cx} ${belowY - cr}
+        Q ${j.cx} ${belowY} ${j.cx - cr} ${belowY}
+        L ${p.cx + cr} ${belowY}
+        Q ${p.cx} ${belowY} ${p.cx} ${belowY - cr}
+        L ${p.cx} ${p.bottom + 3}"
+        stroke="${t.color}" stroke-width="1.8" stroke-dasharray="6 3" fill="none" opacity="${t.opacity}"/>`;
+
+      paths += `<polygon points="${p.cx-4},${p.bottom+6} ${p.cx},${p.bottom-1} ${p.cx+4},${p.bottom+6}"
+        fill="${t.color}" opacity="${t.opacity}"/>`;
+
+      const midX = (j.cx + p.cx) / 2;
+      const lw = t.label.length * 5.5 + 14;
+      const lo = Math.min(t.opacity + 0.25, 1);
+      paths += `<rect x="${midX - lw/2}" y="${belowY - 8}" width="${lw}" height="15" rx="4"
+        fill="#fff" stroke="${t.color}" stroke-width="0.8" opacity="${lo}"/>`;
+      paths += `<text x="${midX}" y="${belowY + 3}" text-anchor="middle"
+        font-family="JetBrains Mono" font-size="7.5" font-weight="700" fill="${t.color}"
+        opacity="${lo}">${t.label}</text>`;
+    });
+
+    svg.innerHTML = paths;
+  }
+
+  // Draw RTM timeline bar below phase nodes
+  function drawRtmTimeline() {
+    const layer = document.getElementById('harnessLayer');
+    const svg = document.getElementById('rtmTimelineSvg');
+    const judge = document.getElementById('pnJudge');
+    if (!layer || !svg || !judge) return;
+
+    const lr = layer.getBoundingClientRect();
+    const w = lr.width;
+    const h = lr.height;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    function pos(el) {
+      const rc = el.getBoundingClientRect();
+      return {
+        cx: rc.left - lr.left + rc.width / 2,
+        bottom: rc.top - lr.top + rc.height
+      };
+    }
+
+    // RTM update points: P1(init), P4(UT map), P5(impl map), P6(IT/E2E map), P7(results)
+    const rtmPhases = [
+      { id: 'pn1', label: 'init' },
+      { id: 'pn4', label: '+UT' },
+      { id: 'pn5', label: '+impl' },
+      { id: 'pn6', label: '+IT/E2E' },
+      { id: 'pn7', label: '+result' },
+    ];
+
+    const j = pos(judge);
+    const lineY = j.bottom + 16;
+    const dotR = 7;
+    const color = '#b45309';
+    const lineColor = '#f59e0b';
+    const trackH = 6;
+
+    let out = '';
+
+    // Collect positions
+    const points = [];
+    rtmPhases.forEach(rp => {
+      const el = document.getElementById(rp.id);
+      if (!el) return;
+      const p = pos(el);
+      points.push({ x: p.cx, label: rp.label });
+    });
+
+    if (points.length === 0) return;
+
+    const firstX = points[0].x - 10;
+    const lastX = j.cx;
+
+    // Background track (rounded pill)
+    out += `<rect x="${firstX}" y="${lineY - trackH/2}" width="${lastX - firstX + 12}" height="${trackH}"
+      rx="${trackH/2}" fill="#fef3c7" stroke="#fde68a" stroke-width="1" opacity="0.7"/>`;
+
+    // Growing gradient fill inside track
+    out += `<rect x="${firstX}" y="${lineY - trackH/2}" width="${lastX - firstX + 12}" height="${trackH}"
+      rx="${trackH/2}" fill="url(#rtmGrad)" opacity="0.6"/>`;
+
+    out += `<defs>
+      <linearGradient id="rtmGrad" x1="${firstX}" y1="0" x2="${lastX}" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#fde68a" stop-opacity="0.2"/>
+        <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#d97706" stop-opacity="0.9"/>
+      </linearGradient>
+    </defs>`;
+
+    // Dots + vertical ticks + labels
+    points.forEach((pt, i) => {
+      const nodeEl = document.getElementById(rtmPhases[i].id);
+      const nb = pos(nodeEl).bottom;
+
+      // Vertical connector line
+      out += `<line x1="${pt.x}" y1="${nb + 1}" x2="${pt.x}" y2="${lineY - trackH/2 - 1}"
+        stroke="${lineColor}" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.6"/>`;
+
+      // Dot (grows larger)
+      const r = dotR + i * 1.2;
+      out += `<circle cx="${pt.x}" cy="${lineY}" r="${r}"
+        fill="${color}" opacity="${0.45 + i * 0.12}"
+        stroke="#fff" stroke-width="2"/>`;
+
+      // "+" icon inside dot (except first which is "init")
+      if (i > 0) {
+        out += `<text x="${pt.x}" y="${lineY + 3}" text-anchor="middle"
+          font-family="Inter" font-size="${8 + i * 0.5}" font-weight="800"
+          fill="#fff" opacity="0.9">+</text>`;
+      } else {
+        out += `<circle cx="${pt.x}" cy="${lineY}" r="2.5" fill="#fff" opacity="0.8"/>`;
+      }
+
+      // Label with background pill
+      const lbl = rtmPhases[i].label;
+      const lblW = lbl.length * 5.5 + 10;
+      const lblY = lineY + r + 9;
+      out += `<rect x="${pt.x - lblW/2}" y="${lblY - 8}" width="${lblW}" height="14" rx="4"
+        fill="#fffbeb" stroke="#fde68a" stroke-width="0.8" opacity="0.9"/>`;
+      out += `<text x="${pt.x}" y="${lblY + 2}" text-anchor="middle"
+        font-family="JetBrains Mono" font-size="8" font-weight="700"
+        fill="${color}" opacity="${0.6 + i * 0.08}">${lbl}</text>`;
+    });
+
+    // Diamond on Judge (larger)
+    const dSize = 11;
+    out += `<polygon points="${j.cx},${lineY - dSize} ${j.cx + dSize},${lineY} ${j.cx},${lineY + dSize} ${j.cx - dSize},${lineY}"
+      fill="#f59e0b" stroke="#92400e" stroke-width="2" opacity="0.95"/>`;
+
+    // Checkmark inside diamond
+    out += `<text x="${j.cx}" y="${lineY + 4}" text-anchor="middle"
+      font-family="Inter" font-size="11" font-weight="800" fill="#fff">&#10003;</text>`;
+
+    // Arrow tip before diamond
+    out += `<polygon points="${j.cx - dSize - 8},${lineY - 4} ${j.cx - dSize - 1},${lineY} ${j.cx - dSize - 8},${lineY + 4}"
+      fill="${color}" opacity="0.7"/>`;
+
+    // "RTM Judge" label with background
+    const jLblY = lineY + dSize + 10;
+    out += `<rect x="${j.cx - 36}" y="${jLblY - 8}" width="72" height="15" rx="4"
+      fill="#fffbeb" stroke="#f59e0b" stroke-width="1" opacity="0.9"/>`;
+    out += `<text x="${j.cx}" y="${jLblY + 3}" text-anchor="middle"
+      font-family="JetBrains Mono" font-size="9" font-weight="800"
+      fill="#92400e">RTM Judge</text>`;
+
+    svg.innerHTML = out;
+  }
+
+  function drawAll() {
+    drawLoopbackArrows();
+    drawRtmTimeline();
+  }
+
+  drawAll();
+  sliders.forEach(s => {
+    s.addEventListener('input', () => setTimeout(drawAll, 50));
+  });
+  window.addEventListener('resize', drawAll);
+})();
+</script>
+
+</body>
+</html>
