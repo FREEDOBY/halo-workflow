@@ -10,27 +10,86 @@ You are the **HALO Workflow Orchestrator**. Based on the 3-Layer Architecture (H
 ## 3-Layer Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: HARNESS (Orchestrator)                                       │
-│  ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌─────┐ ┌───┐     │
-│  │P1 │→│P2 │→│P3 │→│P4 │→│P5 │→│P6 │→│P7 │→│P8 │→│JUDGE│→│P9 │     │
-│  └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ └─────┘ └───┘     │
-│                                                    RTM ◆──────────┐   │
-│  RTM Timeline: ●─────────●──────●───────●──────●──▶◆ Judge       │   │
-│                init     +UT   +impl  +IT/E2E +result  │           │   │
-│                                                       ↓           │   │
-│                              ┌──── Arch Issue → P3 ──┘           │   │
-│                              ├──── Impl Bug → P5                  │   │
-│                              └──── Test Design → P6               │   │
-├───────────────── spawn() → return result ─────────────────────────┤
-│  LAYER 2: AI AGENTS (Phase-Isolated, Tool-Restricted)              │
-│  Sub-agents execute in isolation per phase, returning results to   │
-│  the Harness upon completion                                       │
-├───────────────── Read / Write (File = Agent Interface) ───────────┤
-│  LAYER 3: ARTIFACTS (File System as Interface)                     │
-│  docs/ │ tests/ │ src/ │ .workflow/ │ reports/                     │
-│  RTM = Single Source of Truth                                      │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1: HARNESS  (Orchestrator + State Machine + RTM Judge)              │
+│                                                                             │
+│    ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐       │
+│    │ P1 │─→│ P2 │─→│ P3 │─→│ P4 │─→│ P5 │─→│ P6 │─→│ P7 │─→│ P8 │       │
+│    └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └────┘       │
+│                                                         │                   │
+│                                                    ┌────▼────┐  ┌────┐     │
+│                                                    │  JUDGE  │─→│ P9 │     │
+│                                                    └────┬────┘  └────┘     │
+│                          LOOPBACK ◀─────────────────────┘                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  LAYER 2: AI AGENTS  (Phase-Isolated, Tool-Restricted Sub-Agents)          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  LAYER 3: ARTIFACTS  (File System = Agent Interface)                       │
+│    docs/  │  tests/  │  src/  │  .workflow/  │  reports/                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Workflow Process
+
+```
+  /halo-workflow "Add user authentication"
+                    │
+                    ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                                                                     │
+  │   P1  Requirements      Analyze feature → Generate RTM             │
+  │       Analyst            docs/requirements/[feature]-rtm.md        │
+  │         │                                                           │
+  │         ▼                                                           │
+  │   P2  Code Explorer     Explore codebase patterns (x3 parallel)    │
+  │       x3 agents                                                     │
+  │         │                                                           │
+  │         ▼                                                           │
+  │   P3  Code Architect    Design architecture (x3 parallel)      ◀─┐ │
+  │       x3 agents          docs/architecture/[feature].md          │ │
+  │         │                                                        │ │
+  │         ▼                                                        │ │
+  │   P4  Test Engineer     Write unit tests (TDD RED)               │ │
+  │       (Unit)             tests/unit/[feature].*                   │ │
+  │         │                                                        │ │
+  │         ▼                                                        │ │
+  │   P5  Implementer       Implement code (TDD GREEN)           ◀─┐│ │
+  │                          src/[feature]/*                        ││ │
+  │         │                                                      ││ │
+  │         ▼                                                      ││ │
+  │   P6  Test Engineer     Write integration & E2E tests      ◀─┐││ │
+  │       (IT/E2E)           tests/integration/, tests/e2e/      │││ │
+  │         │                                                    │││ │
+  │         ▼                                                    │││ │
+  │   P7  Test Runner       Execute all tests → Update RTM      │││ │
+  │                                                              │││ │
+  │         │                                                    │││ │
+  │         ▼                                                    │││ │
+  │   P8  Code Reviewer     Review code quality (x3 parallel)   │││ │
+  │       x3 agents                                              │││ │
+  │         │                                                    │││ │
+  │         ▼                                                    │││ │
+  │   ┌──────────┐   FAIL   RTM-based root cause analysis:      │││ │
+  │   │  JUDGE   │────────→  Test Design Issue ─────────────────┘││ │
+  │   │ (RTM)    │────────→  Implementation Bug ─────────────────┘│ │
+  │   │          │────────→  Architecture Issue ──────────────────┘ │
+  │   └────┬─────┘                                                  │
+  │        │ PASS                                                   │
+  │        ▼                                                        │
+  │   P9  Report Writer     Generate completion report              │
+  │                          reports/[feature]-completion.md        │
+  │                                                                 │
+  └─────────────────────────────────────────────────────────────────┘
+```
+
+## RTM Timeline (Single Source of Truth)
+
+```
+  P1           P4           P5            P6            P7          JUDGE
+  ●────────────●────────────●─────────────●─────────────●──────────▶ ◆
+  │            │            │             │             │             │
+  init RTM     map Unit     map impl      map IT/E2E   record       evaluate
+  REQ-IDs      test cases   locations     test cases   results      pass/fail
 ```
 
 ## Core Principles
