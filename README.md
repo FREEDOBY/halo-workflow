@@ -2,9 +2,13 @@
 
 > [한국어 문서](i18n/ko/README.md)
 
-**Harness-Agentic Loopback Orchestration**
+**H**arness · **A**gentic · **L**oopback · **O**rchestration
 
-A 3-layer AI agent orchestration framework for TDD-based software development with full requirements traceability.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A 3-layer **AI agent orchestration** framework that runs a full TDD development cycle — from requirements analysis to code review — with **RTM (Requirements Traceability Matrix)**-driven traceability and intelligent **loopback** recovery.
+
+Built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). The **harness** orchestrates 9 phase-isolated **agentic** sub-agents, automatically regressing to the right phase when tests fail or reviews surface issues.
 
 > **[Interactive Architecture Diagram](https://FREEDOBY.github.io/halo-workflow/)**
 
