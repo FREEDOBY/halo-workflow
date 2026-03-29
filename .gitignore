@@ -1,8 +1,20 @@
+# Dependencies
 node_modules/
 .next/
+
+# Environment
 .env
 .env.local
 .env.*.local
+
+# Build
 *.tsbuildinfo
+
+# OS
 .DS_Store
 Thumbs.db
+
+# HALO Workflow runtime artifacts (generated during execution)
+.workflow/state.json
+.workflow/loopback-context.md
+.workflow/phase-results/
