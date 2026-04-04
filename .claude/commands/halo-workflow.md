@@ -362,7 +362,9 @@ Greenfield 판별:
 
 #### 1.3 Ambiguity Handling
 
-모호한 부분은 합리적으로 판단하여 자동 결정한다. 사용자에게 질문하지 않고 진행한다.
+**단, 1.1.1 System Decisions (Greenfield 게이트)는 예외다. Greenfield인 경우 반드시 사용자 확인을 먼저 받는다.**
+
+Greenfield가 아닌 경우의 모호한 부분은 합리적으로 판단하여 자동 결정한다. 사용자에게 질문하지 않고 진행한다.
 결정 사항은 요구사항 문서의 "결정 사항" 섹션에 기록한다.
 
 #### 1.4 Constraint Verification (제약 검증)
