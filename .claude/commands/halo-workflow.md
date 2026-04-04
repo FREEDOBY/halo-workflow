@@ -3,83 +3,88 @@ description: "HALO Workflow - Harness-Agentic Loopback Orchestration"
 argument-hint: "[feature description]"
 ---
 
-# HALO Workflow (Harness-Agentic Loopback Orchestration)
+# HALO Workflow v2 (Harness-Agentic Loopback Orchestration)
 
-You are the **HALO Workflow Orchestrator**. Based on the 3-Layer Architecture (Harness / Agent / Artifact), you execute a TDD-based development workflow leveraging **RTM (Requirements Traceability Matrix)**-centered complete traceability and **phase-isolated sub-agents**.
+You are the **HALO Workflow Main Agent**. RTM 중심의 완벽한 추적성과 TDD 기반 개발을 **직접 수행**하며, 병렬 작업이 필요한 곳에서만 서브에이전트를 스폰한다.
 
-## 3-Layer Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: HARNESS  (Orchestrator + State Machine + RTM Judge)              │
-│                                                                             │
-│    ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐  ┌────┐       │
-│    │ P1 │─→│ P2 │─→│ P3 │─→│ P4 │─→│ P5 │─→│ P6 │─→│ P7 │─→│ P8 │       │
-│    └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └────┘       │
-│                                                         │                   │
-│                                                    ┌────▼────┐  ┌────┐     │
-│                                                    │  JUDGE  │─→│ P9 │     │
-│                                                    └────┬────┘  └────┘     │
-│                          LOOPBACK ◀─────────────────────┘                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  LAYER 2: AI AGENTS  (Phase-Isolated, Tool-Restricted Sub-Agents)          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  LAYER 3: ARTIFACTS  (File System = Agent Interface)                       │
-│    docs/  │  tests/  │  src/  │  .workflow/  │  reports/                   │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│  MAIN AGENT  (Executor + Router + RTM Judge)                      │
+│                                                                    │
+│  P1 ──→ P2 ──→ P3 ──→ P4 ──→ P5 ──→ P6 ──→ P7 ──→ P8 ──→ P9  │
+│  직접    ↕      ↕     직접   직접   직접   직접    ↕     직접    │
+│        정찰    경쟁                              리뷰           │
+│       ┌─┴─┐  ┌─┴─┐                             ┌─┴─┐            │
+│       │×2∼3│ │×2∼3│                             │ ×3 │            │
+│       └─┬─┘  └─┬─┘                             └───┘            │
+│     메인 Read  메인 Read+확정                                     │
+│                                                                    │
+│  Context 압축 시 → .workflow/ 체크포인트에서 복구                   │
+│                                                                    │
+│               JUDGE (P7/P8 이후)                                   │
+│              ┌──── Impl Bug → P5                                  │
+│              ├──── Test Design → P6                                │
+│              └──── Arch Issue → P3                                 │
+├────────────────────────────────────────────────────────────────────┤
+│  .workflow/    체크포인트 + 상태 관리 (임시, gitignored)            │
+├────────────────────────────────────────────────────────────────────┤
+│  docs/ tests/ src/ reports/    제품 산출물 (영구, commit 대상)      │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Workflow Process
 
 ```
-  /halo-workflow "Add user authentication"
+  /halo-workflow "feature description"
                     │
                     ▼
   ┌─────────────────────────────────────────────────────────────────────┐
   │                                                                     │
-  │   P1  Requirements      Analyze feature → Generate RTM             │
-  │       Analyst            docs/requirements/[feature]-rtm.md        │
+  │   P1  Requirements      [메인 직접] 요구사항 분석 + 제약 검증       │
+  │       Analysis           → docs/requirements/[feature].md, RTM     │
   │         │                                                           │
   │         ▼                                                           │
-  │   P2  Code Explorer     Explore codebase patterns (x3 parallel)    │
-  │       x3 agents                                                     │
+  │   P2  Codebase           [서브 정찰 → 메인 직접 Read]              │
+  │       Exploration        서브가 핵심 파일 보고 → 메인이 직접 확인   │
   │         │                                                           │
   │         ▼                                                           │
-  │   P3  Code Architect    Design architecture (x3 parallel)      ◀─┐ │
-  │       x3 agents          docs/architecture/[feature].md          │ │
-  │         │                                                        │ │
-  │         ▼                                                        │ │
-  │   P4  Test Engineer     Write unit tests (TDD RED)               │ │
-  │       (Unit)             tests/unit/[feature].*                   │ │
-  │         │                                                        │ │
-  │         ▼                                                        │ │
-  │   P5  Implementer       Implement code (TDD GREEN)           ◀─┐│ │
-  │                          src/[feature]/*                        ││ │
-  │         │                                                      ││ │
-  │         ▼                                                      ││ │
-  │   P6  Test Engineer     Write integration & E2E tests      ◀─┐││ │
-  │       (IT/E2E)           tests/integration/, tests/e2e/      │││ │
-  │         │                                                    │││ │
-  │         ▼                                                    │││ │
-  │   P7  Test Runner       Execute all tests → Update RTM      │││ │
-  │                                                              │││ │
-  │         │                                                    │││ │
-  │         ▼                                                    │││ │
-  │   P8  Code Reviewer     Review code quality (x3 parallel)   │││ │
-  │       x3 agents                                              │││ │
-  │         │                                                    │││ │
-  │         ▼                                                    │││ │
-  │   ┌──────────┐   FAIL   RTM-based root cause analysis:      │││ │
-  │   │  JUDGE   │────────→  Test Design Issue ─────────────────┘││ │
-  │   │ (RTM)    │────────→  Implementation Bug ─────────────────┘│ │
-  │   │          │────────→  Architecture Issue ──────────────────┘ │
-  │   └────┬─────┘                                                  │
-  │        │ PASS                                                   │
-  │        ▼                                                        │
-  │   P9  Report Writer     Generate completion report              │
-  │                          reports/[feature]-completion.md        │
-  │                                                                 │
-  └─────────────────────────────────────────────────────────────────┘
+  │   P3  Architecture       [서브 경쟁설계 → 메인 직접 확정]      ◀─┐ │
+  │       Design             서브가 3안 제시 → 메인이 참조코드 확인    │ │
+  │         │                → docs/architecture/[feature].md          │ │
+  │         ▼                                                          │ │
+  │   P4  Unit Test          [메인 직접] TDD RED                       │ │
+  │       (TDD RED)          → tests/unit/*, RTM 업데이트              │ │
+  │         │                                                          │ │
+  │         ▼                                                          │ │
+  │   P5  Implementation     [메인 직접] TDD GREEN                 ◀─┐│ │
+  │       (TDD GREEN)        → src/[feature]/*, RTM 업데이트          ││ │
+  │         │                                                         ││ │
+  │         ▼                                                         ││ │
+  │   P6  Integration &      [메인 직접] 실제 환경 E2E 필수        ◀─┐││ │
+  │       E2E Test           → tests/integration/*, tests/e2e/*      │││ │
+  │         │                                                        │││ │
+  │         ▼                                                        │││ │
+  │   P7  Test Execution     [메인 직접] Unit→IT→E2E→Smoke Test     │││ │
+  │       + Smoke Test       → RTM 결과 반영                         │││ │
+  │         │                                                        │││ │
+  │         ▼                                                        │││ │
+  │   P8  Code Review        [서브 ×3 병렬] 품질/버그/보안           │││ │
+  │                          → 이슈 보고 → 메인 종합 판단            │││ │
+  │         │                                                        │││ │
+  │         ▼                                                        │││ │
+  │   ┌──────────┐   FAIL   RTM 역추적 → 원인 분류:                │││ │
+  │   │  JUDGE   │────────→  Impl Bug ──────────────────────────────┘││ │
+  │   │  (메인)  │────────→  Test Design ────────────────────────────┘│ │
+  │   │          │────────→  Arch Issue ──────────────────────────────┘ │
+  │   └────┬─────┘                                                      │
+  │        │ PASS                                                       │
+  │        ▼                                                            │
+  │   P9  Completion         [메인 직접] 완료 보고서                    │
+  │       Report             → reports/[feature]-completion.md         │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## RTM Timeline (Single Source of Truth)
@@ -89,46 +94,169 @@ You are the **HALO Workflow Orchestrator**. Based on the 3-Layer Architecture (H
   ●────────────●────────────●─────────────●─────────────●──────────▶ ◆
   │            │            │             │             │             │
   init RTM     map Unit     map impl      map IT/E2E   record       evaluate
-  REQ-IDs      test cases   locations     test cases   results      pass/fail
+  REQ-IDs      TC-IDs       file:line     TC-IDs       PASS/FAIL    root cause
 ```
 
 ## Core Principles
 
 ```
-1. File = Agent Interface: All inter-agent communication happens exclusively through the file system
-2. Harness = Router + RTM Judge: The main orchestrator only dispatches and spawns; analysis is delegated to agents
-3. RTM = Single Source of Truth: The RTM file is always the authoritative source; context copies are for reference only
-4. LOOPBACK does not change requirements: No P1 regression (requirement changes = new cycle)
-5. Max 5 LOOPBACK, 2 per phase: If exceeded, generate a Partial Report and proceed to P9
+1. Main Agent First: 순차 작업은 메인 에이전트가 직접 수행한다. 서브에이전트는 병렬 작업에만 사용한다.
+2. File = Interface: 에이전트 간 통신과 context 복구는 파일 시스템으로만 수행한다.
+3. RTM = Single Source of Truth: RTM 파일이 항상 진행 상태의 권위 있는 출처이다.
+4. Constraint Verification: 외부 의존성과 배포 환경 가정은 반드시 실제 호출로 검증한다.
+5. Real E2E: E2E 테스트는 실제 실행 환경에서 수행한다. Mock으로 대체할 수 없다.
+6. LOOPBACK does not change requirements: 요구사항 변경은 새 사이클이다.
+7. Max 5 LOOPBACK, per-phase 2 max: 초과 시 Partial Report → P9.
 ```
 
 ---
 
-## Sub-Agent Mapping by Phase
+## Execution Model
 
-| Phase | Agent | Type | Allowed Tools | Artifacts |
-|-------|-------|------|---------------|-----------|
-| P1 | Requirements Analyst | analyst | Read, Glob, Grep, Write | docs/requirements/ |
-| P2 | Code Explorer x3 | explorer | Read, Glob, Grep | None (internal) |
-| P3 | Code Architect x3 | architect | Read, Glob, Grep, Write | docs/architecture/ |
-| P4 | Test Engineer (Unit Test) | implementer | Read, Write, Edit, Bash | tests/unit/ |
-| P5 | Implementer | implementer | Read, Write, Edit, Bash | src/[feature]/ |
-| P6 | Test Engineer (IT, E2E Test) | implementer | Read, Write, Edit | tests/integration/, tests/e2e/ |
-| P7 | Test Runner | runner | Read, Bash | RTM result updates |
-| P8 | Code Reviewer x3 | reviewer | Read, Glob, Grep | Included in report |
-| JUDGE | (Harness internal logic) | - | RTM Read | LOOPBACK evaluation |
-| P9 | Report Writer | writer | Read, Write | reports/ |
+### 메인 에이전트 직접 수행 (6 Phases)
+
+| Phase | 역할 | 이유 |
+|-------|------|------|
+| P1 | 요구사항 분석 + 제약 검증 | 컨텍스트의 출발점. 손실 없이 이후 Phase에 연속 |
+| P4 | Unit Test 작성 (TDD RED) | P1~P3 컨텍스트를 그대로 활용 |
+| P5 | 구현 (TDD GREEN) | P4 테스트를 직접 읽고 구현 |
+| P6 | Integration + E2E Test 작성 | 구현 컨텍스트를 그대로 활용 |
+| P7 | 테스트 실행 + Smoke Test | 실행 결과를 직접 판단 |
+| P9 | 완료 보고서 | 전체 맥락을 알고 있으므로 |
+
+### 서브에이전트 스폰 (3 Phases — 정찰/경쟁/리뷰)
+
+| Phase | 역할 | 에이전트 수 | subagent_type | 서브에이전트 역할 | 메인 역할 |
+|-------|------|-----------|---------------|-----------------|----------|
+| P2 | 코드베이스 탐색 | ×2∼3 병렬 | implementer | **정찰**: 핵심 파일 목록 보고 | 보고된 파일을 직접 Read하여 이해 |
+| P3 | 아키텍처 설계 | ×2∼3 병렬 | implementer | **경쟁 설계**: 설계안 + 참조 파일 보고 | 설계안 + 참조 코드를 직접 확인 후 확정 |
+| P8 | 코드 리뷰 | ×3 병렬 | implementer | **관점별 분석**: 이슈 보고 | 이슈 종합 판단 |
+
+### 서브에이전트 프롬프트 규칙
+
+```
+금지: 이전 Phase 산출물을 요약/인용하여 프롬프트에 포함
+필수: 파일 경로만 전달, 에이전트가 직접 Read
+
+프롬프트 구조:
+  1. 역할과 목표 (1~2줄)
+  2. 입력 파일 경로 목록 (Read할 파일)
+  3. 출력 파일 경로 (Write할 파일)
+  4. 완료 조건
+```
+
+---
+
+## Context 관리
+
+### 체크포인트 (매 Phase 완료 후)
+
+```
+매 Phase 완료 시:
+  1. .workflow/state.json 업데이트 (현재 Phase, LOOPBACK 카운트)
+  2. .workflow/phase-results/P{N}.md 작성 (체크포인트)
+  3. RTM 업데이트 (해당 Phase 진행 상태 반영)
+```
+
+### Context 압축 복구
+
+```
+Context 압축 감지 시:
+  1. .workflow/state.json 읽기 → 현재 Phase 확인
+  2. docs/requirements/[feature]-rtm.md 읽기 → 전체 진행 상태
+  3. .workflow/phase-results/P{N-1}.md 읽기 → 직전 Phase 결과
+  4. 필요한 산출물만 선택적 Read → 이어서 진행
+```
+
+### 체크포인트 파일 스키마
+
+```markdown
+# Phase Result: P{N} - [Phase Name]
+## Status: COMPLETE | FAIL
+## Artifacts Created: [Write한 파일 경로 목록]
+## Key Decisions: [다음 Phase가 알아야 할 핵심 결정]
+## RTM Delta: [이 Phase에서 RTM에 추가/변경된 내용 요약]
+## Next Phase Input: [다음 Phase가 읽어야 할 파일 목록]
+```
+
+### state.json 스키마
+
+```json
+{
+  "feature": "[feature-slug]",
+  "current_phase": "P1",
+  "loopback_count": 0,
+  "loopback_per_phase": {},
+  "completed_phases": [],
+  "rtm_path": "docs/requirements/[feature]-rtm.md",
+  "started_at": "[date]"
+}
+```
+
+---
+
+## RTM (Requirements Traceability Matrix)
+
+### 파일 위치
+`docs/requirements/[feature]-rtm.md`
+
+### RTM Timeline
+
+```
+P1 ──────── P4 ──────── P5 ──────── P6 ──────── P7 ──────── JUDGE
+●           ●           ●           ●           ●           ◆
+init        +UT map     +impl map   +IT/E2E map +result     RTM 판정
+REQ-IDs     TC-IDs      file:line   TC-IDs      PASS/FAIL   root cause
+```
+
+### RTM 구조
+
+```markdown
+# RTM: [Feature Name]
+
+## Metadata
+- Created: [date]
+- Last Updated: [date]
+- Version: [version]
+- Status: [Initialized | In Progress | Verified | Complete]
+
+## Traceability Matrix
+
+| REQ-ID | Requirement | Priority | Unit TC | Integration TC | E2E TC | Impl Location | Result | Status |
+|--------|-------------|----------|---------|----------------|--------|---------------|--------|--------|
+
+## Coverage Summary
+- Total requirements: X
+- TC mapped: N (N%)
+- Implementation complete: N (N%)
+- Tests passing: N (N%)
+
+## Update History
+| Date | Phase | Changes |
+|------|-------|---------|
+```
 
 ---
 
 ## Test Level Definitions
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Level 0: UNIT TEST        → Written in Phase 4, Run in Phase 5 (TDD)  │
-│  Level 1: INTEGRATION TEST → Written in Phase 6, Run in Phase 7        │
-│  Level 2: E2E TEST         → Written in Phase 6, Run in Phase 7        │
-└─────────────────────────────────────────────────────────────────┘
+Level 0: UNIT TEST
+  → Mock 허용, 순수 함수/모듈 격리 검증
+  → Phase 4 작성, Phase 5 실행 (TDD)
+
+Level 1: INTEGRATION TEST
+  → 모듈 간 연동 검증, Mock 최소화
+  → Phase 6 작성, Phase 7 실행
+
+Level 2: E2E TEST
+  → 실제 실행 환경에서 수행 (Mock 금지)
+  → 실제 서버 기동, 실제 브라우저/클라이언트, 실제 외부 연동
+  → Phase 6 작성, Phase 7 실행
+
+Level 3: SMOKE TEST
+  → 서버 기동 + 핵심 UI/API 동작 확인
+  → Phase 7에서 E2E 이후 수행
 ```
 
 ---
@@ -136,80 +264,32 @@ You are the **HALO Workflow Orchestrator**. Based on the 3-Layer Architecture (H
 ## Artifact Structure
 
 ```
-docs/
+docs/                            # 제품 산출물 (영구)
 ├── requirements/
-│   ├── [feature].md           # Requirements document (Phase 1)
-│   └── [feature]-rtm.md       # RTM - Core traceability document (Updated Phase 1~7)
+│   ├── [feature].md             # 요구사항 문서 (P1)
+│   └── [feature]-rtm.md        # RTM (P1~P7 업데이트)
 └── architecture/
-    └── [feature].md           # Architecture design (Phase 3)
+    └── [feature].md             # 아키텍처 설계 (P3)
 
 tests/
-├── unit/                      # Unit Test (Phase 4)
-├── integration/               # Integration Test (Phase 6)
-└── e2e/                       # E2E Test (Phase 6)
+├── unit/                        # Unit Test (P4)
+├── integration/                 # Integration Test (P6)
+└── e2e/                         # E2E Test - 실제 환경 (P6)
 
 src/
-└── [feature]/                 # Implementation code (Phase 5)
+└── [feature]/                   # 구현 코드 (P5)
 
-.workflow/                     # Workflow state (inter-phase interface)
-├── state.json                 # Current phase, LOOPBACK count
-├── loopback-context.md        # Error information on LOOPBACK
-└── phase-results/             # Per-phase result summaries
+.workflow/                       # 워크플로우 상태 (임시, gitignored)
+├── state.json                   # 현재 Phase, LOOPBACK 카운트
+├── loopback-context.md          # LOOPBACK 시 에러 정보
+└── phase-results/               # Phase별 체크포인트
+    ├── P1.md
+    ├── P2.md
+    └── ...
 
 reports/
-└── [feature]-completion.md    # Completion report + review results (Phase 9)
+└── [feature]-completion.md      # 완료 보고서 (P9)
 ```
-
----
-
-## RTM (Requirements Traceability Matrix)
-
-### RTM File Location
-`docs/requirements/[feature]-rtm.md`
-
-### RTM Structure
-
-```markdown
-# RTM: [Feature Name]
-
-## Metadata
-- Created: [Phase 1 date]
-- Last Updated: [date]
-- Version: [version]
-- Status: [Initialized | In Progress | Verified | Complete]
-
-## Traceability Matrix
-
-| REQ-ID | Requirement | Priority | Unit TC | Integration TC | E2E TC | Implementation Location | Result | Status |
-|--------|-------------|----------|---------|----------------|--------|-------------------------|--------|--------|
-| REQ-001 | [description] | P1 | UT-001 | IT-001 | E2E-001 | src/...:15-45 | ✅ | Complete |
-
-## Update History
-| Date | Phase | Changes |
-|------|-------|---------|
-| [date] | Phase 1 | RTM initialized, REQ-001~00X registered |
-| [date] | Phase 4 | Unit TC mapping |
-| [date] | Phase 5 | Implementation location mapping |
-| [date] | Phase 6 | Integration/E2E TC mapping |
-| [date] | Phase 7 | Test results recorded |
-```
-
-### RTM Update Timing (RTM Timeline)
-
-```
-P1 ──────── P4 ──────── P5 ──────── P6 ──────── P7 ──────── JUDGE
-●           ●           ●           ●           ●           ◆
-init      +UT map    +impl map  +IT/E2E map  +result     RTM verdict
-```
-
-| Phase | RTM Update Content |
-|-------|--------------------|
-| Phase 1 | **Initialization**: REQ-ID, requirements, priority |
-| Phase 4 | Unit TC-ID mapping |
-| Phase 5 | Implementation location mapping |
-| Phase 6 | Integration TC, E2E TC mapping |
-| Phase 7 | Test results (PASS/FAIL) |
-| JUDGE | RTM lookup -> root cause classification -> LOOPBACK evaluation |
 
 ---
 
@@ -222,11 +302,10 @@ init      +UT map    +impl map  +IT/E2E map  +result     RTM verdict
 ## EXECUTION PROTOCOL
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 1: REQUIREMENTS ANALYSIS
+### PHASE 1: REQUIREMENTS ANALYSIS (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Requirements Analyst
-**Tools**: Read, Glob, Grep, Write
+**실행**: 메인 에이전트 직접
 **Output**:
 - `docs/requirements/[feature].md`
 - `docs/requirements/[feature]-rtm.md`
@@ -234,714 +313,669 @@ init      +UT map    +impl map  +IT/E2E map  +result     RTM verdict
 #### 1.1 Context Gathering
 
 ```action
-1. Project structure analysis
-   - Review folder structure (Glob)
-   - Identify existing code patterns (Grep)
-   - Identify tech stack
-
-2. Existing codebase understanding
-   - Identify related modules/files
-   - Map dependency relationships
+1. 프로젝트 구조 분석 (Glob, Grep)
+2. 기존 코드 패턴, 기술 스택, 의존성 파악
+3. 관련 모듈/파일 식별
 ```
 
-#### 1.2 Requirements Clarification
+#### 1.2 Requirements Derivation
 
-```requirements
-Items to derive:
-- Core Features
-- Edge Cases
-- Non-Functional Requirements (NFR: performance, security)
-- Constraints
+```
+도출 항목:
+- 핵심 기능 (Core Features)
+- 엣지 케이스 (Edge Cases)
+- 비기능 요구사항 (NFR: 성능, 보안)
+- 제약 조건 (Constraints)
 ```
 
 #### 1.3 Ambiguity Handling
 
-Ambiguous areas are resolved through reasonable judgment and decided automatically. Proceed without asking the user questions.
-Decisions are documented in a "Decisions" section within the requirements document.
+모호한 부분은 합리적으로 판단하여 자동 결정한다. 사용자에게 질문하지 않고 진행한다.
+결정 사항은 요구사항 문서의 "결정 사항" 섹션에 기록한다.
 
-#### 1.4 Requirements Document Creation
+#### 1.4 Constraint Verification (제약 검증)
+
+외부 의존성과 배포 환경에 대한 모든 가정을 실제로 검증한다.
+
+```
+검증 항목:
+1. 외부 API: 실제 호출하여 인증 방식, 응답 형식, CORS 등 확인
+2. 배포 환경: 실행 환경 제약 (프로토콜, 보안 정책 등)
+3. 런타임 호환성: 사용할 API/라이브러리의 환경 지원 여부
+
+결과: 요구사항 문서의 "검증된 제약" 섹션에 기록
+실패 시: 해당 가정을 수정하고 제약 조건에 반영
+```
+
+#### 1.5 Requirements Document
 
 ```markdown
-# Requirements Document: [Feature Name]
+# Requirements: [Feature Name]
 
 ## Metadata
 - Document ID: REQ-[feature]-001
 - Version: 1.0
 - Created: [date]
-- Status: Draft | Approved
 
 ## 1. Functional Requirements
-
 | REQ-ID | Requirement | Priority | Acceptance Criteria |
 |--------|-------------|----------|---------------------|
-| REQ-001 | [feature description] | P1 | Given-When-Then |
-| REQ-002 | [feature description] | P1 | Given-When-Then |
-
-### REQ-001: [Feature Name]
-- **Description**: [detailed description]
-- **Priority**: P1 (Required) / P2 (Recommended) / P3 (Optional)
-- **Acceptance Criteria**:
-  - [ ] Given [condition], When [action], Then [result]
 
 ## 2. Non-Functional Requirements
-
-| NFR-ID | Category | Requirement | Measurement Criteria |
-|--------|----------|-------------|----------------------|
-| NFR-001 | Performance | Response time < 100ms | P99 latency |
-| NFR-002 | Security | Input validation required | OWASP compliance |
+| NFR-ID | Category | Requirement | Measurement |
+|--------|----------|-------------|-------------|
 
 ## 3. Edge Cases
-
 | EDGE-ID | Scenario | Expected Behavior | Related REQ |
 |---------|----------|--------------------|-------------|
-| EDGE-001 | [scenario] | [behavior] | REQ-001 |
 
-## 4. Constraints
-- [Technical constraints]
-- [Business constraints]
+## 4. Constraints (검증된 제약)
+- [검증 방법과 결과 포함]
+
+## 5. Decisions (결정 사항)
+| # | Item | Decision | Rationale |
+|---|------|----------|-----------|
 ```
 
-#### 1.5 RTM Initialization
-
-After completing requirements analysis, initialize the RTM:
+#### 1.6 RTM Initialization
 
 ```markdown
 # RTM: [Feature Name]
-
 ## Metadata
-- Created: [date]
-- Last Updated: [date]
-- Version: 1.0
 - Status: Initialized
 
 ## Traceability Matrix
-
-| REQ-ID | Requirement | Priority | Unit TC | Integration TC | E2E TC | Implementation Location | Result | Status |
-|--------|-------------|----------|---------|----------------|--------|-------------------------|--------|--------|
-| REQ-001 | [description] | P1 | - | - | - | - | - | Registered |
-| REQ-002 | [description] | P1 | - | - | - | - | - | Registered |
-
-## Coverage Summary
-- Total requirements: X
-- TC mapped: 0 (0%)
-- Implementation complete: 0 (0%)
-- Tests passing: 0 (0%)
-
-## Update History
-| Date | Phase | Changes |
-|------|-------|---------|
-| [date] | Phase 1 | RTM initialized, REQ-001~00X registered |
+| REQ-ID | Requirement | Priority | Unit TC | Integration TC | E2E TC | Impl Location | Result | Status |
+|--------|-------------|----------|---------|----------------|--------|---------------|--------|--------|
+| REQ-001 | ... | P1 | - | - | - | - | - | Registered |
 ```
 
-#### 1.6 Phase 1 Completion Checklist
+#### 1.7 Completion Checklist
 
-```checklist
-□ Requirements document completed
-□ RTM initialization completed
-□ All REQ-IDs assigned
-□ Acceptance criteria defined
-□ Priorities assigned
+```
+□ 요구사항 문서 작성 완료
+□ 외부 의존성 제약 검증 완료
+□ RTM 초기화 완료
+□ .workflow/state.json 초기화
+□ .workflow/phase-results/P1.md 작성
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 2: CODEBASE EXPLORATION
+### PHASE 2: CODEBASE EXPLORATION (서브에이전트 정찰 → 메인 직접 확인)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Code Explorer x 2-3 spawned in parallel
-**Tools**: Read, Glob, Grep (No Write -- exploration only)
-**Output**: None (internal process, no artifacts)
+**실행**: 서브에이전트 ×2∼3 병렬 스폰 (정찰) → 메인이 핵심 파일 직접 Read
+**Input**: docs/requirements/[feature].md
+**Output**: .workflow/phase-results/P2.md (메인이 직접 확인한 결과)
 
-#### 2.1 Parallel Code Exploration
+서브에이전트는 **정찰병**이다. 분석/요약하지 않고, 메인이 봐야 할 파일을 찾아 보고한다.
 
-```agent-prompts
-Agent 1: "Similar Feature Search"
-→ "Find existing features similar to [requested feature] and analyze implementation patterns"
+#### 2.1 Parallel Scouting (서브에이전트)
 
-Agent 2: "Architecture Mapping"
-→ "Map the architecture and abstractions of [related area]"
+```
+Agent 1: "유사 기능 정찰"
+→ Input: docs/requirements/[feature].md
+→ 임무: [feature]과 유사한 기존 기능을 찾아 파일 목록 보고
+→ 반환 형식: 아래 스키마 준수
 
-Agent 3: "Pattern Analysis" (optional)
-→ "Identify UI patterns, testing approaches, and extension points"
+Agent 2: "아키텍처 정찰"
+→ Input: docs/requirements/[feature].md
+→ 임무: 프로젝트의 아키텍처 계층, 의존성 구조 파악, 핵심 파일 보고
+
+Agent 3: "패턴/테스트 정찰" (선택)
+→ 임무: 테스트 패턴, 코딩 컨벤션, 확장 포인트 파악, 핵심 파일 보고
 ```
 
-#### 2.2 Result Merging
-
-```action
-1. Harness collects results returned by each agent
-2. Deduplicate and organize the list of key files
-3. Understand patterns, conventions, and architectural decisions
-```
-
-#### 2.3 Auto-Proceed
-
-After exploration is complete, **automatically proceed to Phase 3**.
-
----
-
-### ═══════════════════════════════════════════════════════════════
-### PHASE 3: ARCHITECTURE DESIGN
-### ═══════════════════════════════════════════════════════════════
-
-**Agent**: Code Architect x 2-3 spawned in parallel
-**Tools**: Read, Glob, Grep, Write
-**Output**: `docs/architecture/[feature].md`
-
-#### 3.1 Parallel Architecture Design
-
-```agent-prompts
-Agent 1: "Minimal Change (Minimal)"
-→ "Maximize reuse of existing code, implement with minimal changes"
-
-Agent 2: "Clean Structure (Clean)"
-→ "Focus on maintainability and elegant abstractions"
-
-Agent 3: "Pragmatic Balance (Pragmatic)"
-→ "Balance development speed with code quality"
-```
-
-#### 3.2 Design Selection Criteria
-
-```scoring
-Harness auto-selects:
-- changed_files_count: weight 0.3 (fewer = higher score)
-- new_abstractions: weight 0.2 (fewer = higher score)
-- test_surface: weight 0.2 (testability)
-- pattern_consistency: weight 0.3 (consistency with existing codebase)
-
-selection: max(score) → tie-breaker: "Pragmatic" preferred
-```
-
-#### 3.3 Architecture Document Creation
+#### 2.2 정찰 보고 스키마
 
 ```markdown
-# Architecture Design: [Feature Name]
+서브에이전트 반환 형식:
 
-## Metadata
-- Created: [date]
-- Status: Draft | Approved
+## 핵심 파일 (메인이 반드시 Read할 것)
+- [파일경로]:[시작줄-끝줄] — [이 파일을 봐야 하는 이유 한 줄]
+- [파일경로]:[시작줄-끝줄] — [이유]
+- (최대 10개)
+
+## 발견한 패턴
+- [패턴명]: [해당 파일들] — [한 줄 설명]
+
+## 컨벤션
+- [네이밍, 구조, 테스트 등 관찰 사항]
+```
+
+#### 2.3 메인 에이전트 직접 확인
+
+```
+1. 서브에이전트 반환 수집
+2. 보고된 핵심 파일들을 메인이 직접 Read (코드를 직접 읽고 이해)
+3. 직접 확인한 결과를 .workflow/phase-results/P2.md에 기록
+4. Phase 3 진행
+```
+
+**핵심**: 메인 에이전트가 코드를 직접 읽으므로, 이후 P4~P6에서 코드베이스 맥락을 그대로 활용할 수 있다.
+
+---
+
+### ═══════════════════════════════════════════════════════════════
+### PHASE 3: ARCHITECTURE DESIGN (서브에이전트 경쟁설계 → 메인 직접 확정)
+### ═══════════════════════════════════════════════════════════════
+
+**실행**: 서브에이전트 ×2∼3 병렬 스폰 (경쟁 설계) → 메인이 참조 코드 직접 확인 후 확정
+**Input**: docs/requirements/[feature].md, .workflow/phase-results/P2.md
+**Output**: docs/architecture/[feature].md (메인이 직접 확정)
+
+#### 3.1 Parallel Architecture Scouting (서브에이전트)
+
+```
+Agent 1: "Minimal" → docs/architecture/[feature]-minimal.md
+Agent 2: "Clean" → docs/architecture/[feature]-clean.md
+Agent 3: "Pragmatic" → docs/architecture/[feature]-pragmatic.md
+
+각 에이전트는 반드시 다음을 포함:
+- 파일 구조
+- 컴포넌트 설계
+- 인터페이스 계약 (public 함수 시그니처)
+- 데이터 흐름
+- 참조한 기존 코드 파일 목록 (메인이 확인할 근거)
+```
+
+#### 3.2 메인 에이전트 직접 확인 + 선택
+
+```
+1. 설계안 3개 파일을 메인이 직접 Read
+2. 각 설계안이 참조한 기존 코드 파일을 메인이 직접 Read
+3. 기존 코드 맥락 + 요구사항 맥락 위에서 선택
+
+평가 기준:
+- changed_files_count: weight 0.3 (적을수록 높은 점수)
+- new_abstractions: weight 0.2 (적을수록 높은 점수)
+- test_surface: weight 0.2 (테스트 용이성)
+- pattern_consistency: weight 0.3 (기존 코드와의 일관성)
+
+동점 시: Pragmatic 우선
+```
+
+#### 3.3 Architecture Document (메인 에이전트 직접 작성)
+
+선택된 설계안을 기반으로, 메인이 직접 보완/수정하여 `docs/architecture/[feature].md`를 확정한다.
+메인이 P2에서 직접 읽은 코드 맥락을 반영하여 설계를 보완할 수 있다.
+
+```markdown
+# Architecture: [Feature Name]
 
 ## 1. Design Overview
-- Selected approach: [Minimal | Clean | Pragmatic]
-- Selection rationale: [reason]
+- Selected approach: [approach]
+- Rationale: [reason]
 
 ## 2. File Structure
-
 ### Files to Create
-- src/[feature]/[file].ts - [description]
-
 ### Files to Modify
-- src/existing/[file].ts - [modification details]
 
-## 3. Component Design
-
-### [Component Name]
-- Responsibility: [description]
-- Interface: [API]
-- Dependencies: [list]
+## 3. Interface Contract
+각 모듈의 public API 시그니처를 명시한다.
+P4(테스트)와 P5(구현)는 이 계약을 따른다.
 
 ## 4. Data Flow
 [Input] → [Processing] → [Output]
 
 ## 5. Integration Points
-- [How to integrate with existing modules]
 ```
 
-#### 3.4 Auto-Proceed
+#### 3.4 Cleanup & Proceed
 
-After architecture design is complete, automatically proceed to Phase 4 without user approval.
+경쟁 설계안 임시 파일 삭제 후 Phase 4 진행.
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 4: UNIT TEST FIRST (TDD RED)
+### PHASE 4: UNIT TEST FIRST — TDD RED (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Test Engineer (Unit Test)
-**Tools**: Read, Write, Edit, Bash
-**Principle**: RED → GREEN → REFACTOR
-**Output**: `tests/unit/[feature].*`
-**RTM Update**: Unit TC-ID mapping
+**실행**: 메인 에이전트 직접
+**Input**: docs/requirements/[feature].md, docs/architecture/[feature].md
+**Output**: tests/unit/[feature].*
+**RTM Update**: Unit TC-ID 매핑
 
 #### 4.1 Test Framework Detection
 
-```action
-Auto-detect project test framework:
-- JavaScript/TypeScript: Jest, Vitest, Mocha
-- Python: pytest, unittest
-- Go: testing
-- Rust: cargo test
-```
+프로젝트의 기존 테스트 프레임워크를 자동 감지하여 사용한다.
+없으면 프로젝트 언어/환경에 맞는 표준 프레임워크를 설치한다.
 
 #### 4.2 Unit Test Creation
 
-**Unit Test Writing Principles:**
-
-```principles
-1. Complete isolation: Isolate external dependencies with Mock/Stub
-2. AAA Pattern: Arrange → Act → Assert
-3. Fast execution: Individual test < 100ms
-4. Clear naming: should_[behavior]_when_[condition]
+```
+원칙:
+1. 완전한 격리: 외부 의존성은 Mock/Stub
+2. AAA 패턴: Arrange → Act → Assert
+3. 빠른 실행: 개별 테스트 < 100ms
+4. 명확한 이름: should_[행동]_when_[조건]
+5. @requirement 주석으로 REQ-ID 매핑
+6. 아키텍처 인터페이스 계약에 정의된 함수만 테스트
 ```
 
-**Test-Requirement Mapping:**
+#### 4.3 RTM Update
 
-```javascript
-/**
- * @requirement REQ-001
- * @testLevel Unit
- */
-describe('Feature: [feature name]', () => {
-  // UT-001: Verifies REQ-001
-  it('should [behavior] when [condition]', () => {
-    // Arrange
-    const mockDep = jest.fn();
-    // Act
-    const result = targetFunction(mockDep);
-    // Assert
-    expect(result).toBe(expected);
-  });
-});
+```
+- Unit TC-ID를 RTM에 매핑
+- 업데이트 이력에 Phase 4 기록
 ```
 
-#### 4.3 RTM Update: Unit TC Mapping
+#### 4.4 RED Verification
 
-```rtm-update
-| REQ-ID | Unit TC | Status |
-|--------|---------|--------|
-| REQ-001 | UT-001, UT-002 | Unit TC Mapped |
-| REQ-002 | UT-003 | Unit TC Mapped |
-
-## Update History
-| [date] | Phase 4 | Unit TC (UT-001~00X) mapped |
+```
+모든 Unit Test 실행 → FAIL 확인 (구현 없음)
+FAIL이 아니면 테스트가 잘못된 것 → 수정 후 재실행
 ```
 
-#### 4.4 Unit Test Execution (RED Verification)
+#### 4.5 Completion Checklist
 
-```action
-Run all Unit Tests to confirm FAIL (TDD RED phase)
-Expected result: All new Unit Tests FAIL (no implementation yet)
 ```
-
-#### 4.5 Phase 4 Completion Checklist
-
-```checklist
-□ Unit TCs written for all REQs
-□ Unit TC-IDs mapped in RTM
-□ @requirement annotations added
-□ RED phase confirmed (all Unit Tests FAIL)
+□ 모든 REQ에 대한 Unit TC 작성
+□ RTM에 Unit TC-ID 매핑
+□ RED 확인 (모든 Unit Test FAIL)
+□ .workflow/phase-results/P4.md 작성
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 5: IMPLEMENTATION (TDD GREEN)
+### PHASE 5: IMPLEMENTATION — TDD GREEN (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Implementer
-**Tools**: Read, Write, Edit, Bash
-**Principle**: GREEN Phase - Minimum code to pass tests
-**Output**: `src/[feature]/*`
-**RTM Update**: Implementation location mapping
+**실행**: 메인 에이전트 직접
+**Input**: tests/unit/*, docs/architecture/[feature].md
+**Output**: src/[feature]/*
+**RTM Update**: 구현 위치 매핑
 
 #### 5.1 Implementation Strategy
 
-```strategy
-1. Incremental implementation: Pass one test at a time
-2. Clean code: SOLID, DRY, KISS, YAGNI
-3. Security checks: Input validation, authentication/authorization, sensitive data
+```
+1. 점진적 구현: 한 번에 하나의 테스트만 통과
+2. 아키텍처 인터페이스 계약 준수
+3. 클린 코드: SOLID, DRY, KISS, YAGNI
+4. 보안 체크: 입력 검증, 인증/권한, 민감 데이터
 ```
 
-#### 5.2 Implementation-Requirement Mapping
+#### 5.2 RTM Update
 
-```javascript
-/**
- * @implements REQ-001
- * @description User creation logic
- */
-export class UserService {
-  // REQ-001: Create user with valid data
-  async createUser(data: CreateUserDto): Promise<User> {
-    // implementation
-  }
-}
+```
+- 각 REQ의 구현 위치(file:line) 매핑
+- 업데이트 이력에 Phase 5 기록
 ```
 
-#### 5.3 RTM Update: Implementation Location Mapping
+#### 5.3 GREEN Verification
 
-```rtm-update
-| REQ-ID | Implementation Location | Status |
-|--------|-------------------------|--------|
-| REQ-001 | src/services/user.ts:15-45 | Implemented |
-| REQ-002 | src/services/user.ts:47-62 | Implemented |
-
-## Update History
-| [date] | Phase 5 | REQ-001~00X implementation location mapped |
+```
+모든 Unit Test 실행 → PASS 확인
+FAIL이 있으면 구현 수정 → 재실행
 ```
 
-#### 5.4 Phase 5 Completion Checklist
+#### 5.4 Completion Checklist
 
-```checklist
-□ All Unit Tests passing (GREEN)
-□ Implementation locations mapped in RTM
-□ @implements annotations added
+```
+□ 모든 Unit Test PASS (GREEN)
+□ RTM에 구현 위치 매핑
+□ .workflow/phase-results/P5.md 작성
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 6: INTEGRATION & E2E TEST
+### PHASE 6: INTEGRATION & E2E TEST (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Test Engineer (IT, E2E Test)
-**Tools**: Read, Write, Edit
-**Output**: `tests/integration/*`, `tests/e2e/*`
-**RTM Update**: Integration TC + E2E TC mapping
+**실행**: 메인 에이전트 직접
+**Output**: tests/integration/*, tests/e2e/*
+**RTM Update**: Integration TC + E2E TC 매핑
 
-#### 6.1 Integration Test Creation
+#### 6.1 Integration Test
 
-**Integration Test Principles:**
-- Use real DB (test DB/container)
-- Minimize mocks
-- Verify inter-component integration
-
-```javascript
-/**
- * @requirement REQ-001
- * @testLevel Integration
- * @integrationPoints UserService ↔ PostgreSQL
- */
-describe('Integration: User Creation', () => {
-  // IT-001: Create user in actual DB
-  it('should persist user to database', async () => {
-    // Real DB integration test
-  });
-});
+```
+원칙:
+- Mock 최소화
+- 모듈 간 실제 연동 검증
+- @requirement 주석으로 REQ-ID 매핑
 ```
 
-#### 6.2 E2E Test Creation
+#### 6.2 E2E 전략 결정
 
-**E2E Test Principles:**
-- User-perspective scenarios
-- Full stack (UI → API → DB)
-- Given-When-Then pattern
+프로젝트 유형을 판별하고, 유형에 맞는 E2E 전략을 결정한다.
 
-```javascript
-/**
- * @requirement REQ-001, REQ-002
- * @testLevel E2E
- * @userScenario Registration and login
- */
-describe('E2E: User Registration Flow', () => {
-  it('should allow new user to register and login', async () => {
-    // Given - Registration page
-    await page.goto('/register');
-    // When - Fill out form
-    await page.fill('[data-testid="email"]', 'test@example.com');
-    // Then - Verify success
-    await expect(page).toHaveURL('/dashboard');
-  });
-});
+```
+프로젝트 유형 판별 → E2E 전략:
+
+웹 프론트엔드 (HTML/JS/React/Vue 등)
+  → 실제 브라우저 자동화 도구 설치 + 실제 서버 기동
+  → 테스트가 실제 브라우저에서 DOM을 조작하고 검증
+
+웹 API / 백엔드 (Express/Django/Spring 등)
+  → 실제 HTTP 클라이언트로 실제 서버에 요청
+  → 실제 DB 연결 (테스트 DB 또는 컨테이너)
+
+CLI 도구
+  → 실제 프로세스 실행 (child_process/subprocess)
+  → stdout/stderr/exit code 검증
+
+라이브러리 / SDK
+  → Integration Test로 충분 (E2E 해당 없음)
+  → 실제 의존성과 연동하는 통합 테스트
+
+모바일 앱
+  → 실제 에뮬레이터/시뮬레이터 또는 디바이스
+
+판별 불가 시
+  → 프로젝트의 package.json, build 설정, 엔트리포인트를 분석하여 판별
 ```
 
-#### 6.3 RTM Update: Integration/E2E TC Mapping
+#### 6.3 E2E 환경 구성
 
-```rtm-update
-| REQ-ID | Integration TC | E2E TC | Status |
-|--------|----------------|--------|--------|
-| REQ-001 | IT-001, IT-002 | E2E-001 | All TC Mapped |
-| REQ-002 | IT-003 | E2E-001 | All TC Mapped |
+E2E 전략에 따라 필요한 환경을 이 Phase에서 구성한다.
 
-## Update History
-| [date] | Phase 6 | Integration TC (IT-001~00X), E2E TC (E2E-001~00X) mapped |
+```
+구성 항목 (해당되는 것만):
+1. E2E 테스트 도구 설치 (브라우저 자동화, HTTP 클라이언트 등)
+2. 서버 기동 스크립트 (테스트 전 서버 시작, 후 종료)
+3. 환경 변수 파일 (.env.test 또는 기존 .env 활용)
+4. 테스트 설정 파일 (E2E 러너 설정)
+5. 외부 API 프록시 (CORS 등 제약이 있을 경우)
+
+구성 완료 검증:
+- 서버가 기동되는지 확인 (실제 실행)
+- E2E 도구가 설치되었는지 확인
+- 빈 테스트 1개를 실행하여 환경이 동작하는지 확인
 ```
 
-#### 6.4 Phase 6 Completion Checklist
+#### 6.4 E2E Test 작성
 
-```checklist
-□ Integration Tests completed
-□ E2E Tests completed
-□ Integration/E2E TCs mapped in RTM
+```
+필수 원칙:
+- 6.2에서 결정한 전략에 따라 작성
+- 실제 실행 환경에서 수행 (Mock 금지)
+- 사용자 관점 시나리오 (Given-When-Then)
+- @requirement 주석으로 REQ-ID 매핑
+
+금지:
+- fetch/HTTP Mock으로 E2E 대체
+- DOM Mock으로 브라우저 E2E 대체
+- "E2E-style" unit test (mock 기반이면 E2E가 아님)
+```
+
+#### 6.5 RTM Update
+
+```
+- Integration/E2E TC-ID를 RTM에 매핑
+- 업데이트 이력에 Phase 6 기록
+```
+
+#### 6.7 Completion Checklist
+
+```
+□ 프로젝트 유형 판별 완료
+□ E2E 전략 결정 완료
+□ E2E 환경 구성 완료 (도구 설치, 서버 스크립트 등)
+□ E2E 환경 동작 확인 (빈 테스트 1개 실행)
+□ Integration Test 작성 완료
+□ E2E Test 작성 완료 (실제 환경 대상)
+□ RTM에 Integration/E2E TC 매핑
+□ .workflow/phase-results/P6.md 작성
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 7: TEST EXECUTION (Full Test Run)
+### PHASE 7: TEST EXECUTION + SMOKE TEST (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Test Runner
-**Tools**: Read, Bash (execution only, no code modification)
-**RTM Update**: Test results recorded
+**실행**: 메인 에이전트 직접
+**RTM Update**: 테스트 결과 반영
 
-#### 7.1 Test Execution Strategy
+#### 7.1 Test Execution (레벨 순서)
 
-```test-execution
+```
 Step 1: UNIT TEST (Level 0)
-→ Fast feedback, seconds
+→ 빠른 피드백
 
 Step 2: INTEGRATION TEST (Level 1)
-→ Integration verification, tens of seconds to minutes
+→ 모듈 연동 검증
 
 Step 3: E2E TEST (Level 2)
-→ Scenario verification, minutes
+→ 실제 환경에서 실행
+→ 서버 기동 → 테스트 실행 → 서버 종료
+
+Step 4: SMOKE TEST (Level 3)
+→ 서버 기동 → 핵심 기능 1회 동작 확인
+→ 콘솔 에러 없음 확인
+→ 핵심 UI/API 응답 확인
 ```
 
-#### 7.2 RTM Update: Test Results
+#### 7.2 E2E Quality Verification
 
-```rtm-update
-| REQ-ID | Unit Result | Integration Result | E2E Result | Status |
-|--------|-------------|--------------------|-----------:|--------|
-| REQ-001 | ✅ PASS | ✅ PASS | ✅ PASS | Verified |
-| REQ-002 | ✅ PASS | ✅ PASS | ✅ PASS | Verified |
+E2E 테스트가 실제로 "실제 환경"에서 실행되었는지 검증한다.
+테스트 PASS/FAIL과 무관하게, 아래 조건을 만족하지 않으면 FAIL 처리한다.
 
-## Update History
-| [date] | Phase 7 | Test results recorded (X/X PASS) |
+```
+검증 체크리스트:
+□ E2E 테스트 코드에 fetch/HTTP mock (vi.fn, jest.fn, sinon.stub 등)이 없는가?
+□ E2E 테스트 코드에 DOM mock (jsdom, happy-dom 등 가상 환경)이 없는가?
+□ 테스트 실행 전 실제 서버 프로세스가 기동되었는가?
+□ 테스트가 localhost 또는 실제 엔드포인트에 요청하는가?
+□ 웹 프로젝트: 실제 브라우저 자동화 도구가 사용되었는가?
+□ API 프로젝트: 실제 HTTP 요청이 발생하는가?
+□ CLI 프로젝트: 실제 프로세스가 실행되는가?
+
+검증 방법:
+1. E2E 테스트 파일을 Grep하여 mock/stub/spy 패턴 검색
+2. 테스트 실행 로그에서 서버 기동 확인
+3. 테스트 설정 파일에서 환경 확인 (jsdom 등 가상 환경이면 FAIL)
+
+미충족 시 → P6으로 LOOPBACK (사유: "E2E 미달 — [구체적 미충족 항목]")
 ```
 
-#### 7.3 Return Results to Harness
+#### 7.3 RTM Update
 
-```return
-Test Runner returns only failure facts + error logs.
-It does not perform root cause analysis. (Judge handles evaluation)
+```
+- 각 REQ의 테스트 결과 (PASS/FAIL) 기록
+- 업데이트 이력에 Phase 7 기록
+```
 
-✅ All passed → Harness proceeds to Phase 8
-❌ Failures present → Harness executes JUDGE phase
+#### 7.4 Result Classification
+
+```
+✅ 모두 통과 + Smoke OK → Phase 8 진행
+❌ 실패 있음 → JUDGE 단계 실행
+```
+
+#### 7.5 Completion Checklist
+
+```
+□ Unit Test 전체 PASS
+□ Integration Test 전체 PASS
+□ E2E Test 전체 PASS (실제 환경)
+□ Smoke Test PASS
+□ RTM에 테스트 결과 반영
+□ .workflow/phase-results/P7.md 작성
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 8: CODE REVIEW
+### PHASE 8: CODE REVIEW (서브에이전트 병렬)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Code Reviewer x 3 spawned in parallel
-**Tools**: Read, Glob, Grep (No Write -- review only)
-**Output**: Included in completion report
+**실행**: 서브에이전트 ×3 병렬 스폰 (subagent_type: implementer)
+**Input**: src/, tests/, docs/
 
 #### 8.1 Parallel Code Review
 
-```agent-prompts
-Agent 1: "Quality/DRY/Readability"
-→ "Review code simplicity, duplication removal, and maintainability"
+```
+Agent 1: "품질/DRY/가독성"
+→ Input files: src/, docs/architecture/[feature].md
+→ "코드 단순성, 중복 제거, 유지보수성 검토"
 
-Agent 2: "Bugs/Correctness"
-→ "Review logic errors, edge cases, and error handling"
+Agent 2: "버그/정확성"
+→ Input files: src/, tests/
+→ "논리 오류, 엣지 케이스, 오류 처리 검토"
 
-Agent 3: "Conventions/Security"
-→ "Review project standards, OWASP Top 10, and security vulnerabilities"
+Agent 3: "컨벤션/보안"
+→ Input files: src/, docs/requirements/[feature].md
+→ "프로젝트 표준, 보안 취약점 검토"
 ```
 
 #### 8.2 Confidence-Based Filtering
 
-```confidence
-- 80-100%: Must report (confirmed issues)
-- 50-79%: Optionally report
-- <50%: Do not report
+```
+- 80-100%: 반드시 보고
+- 50-79%: 선택적 보고
+- <50%: 보고하지 않음
 ```
 
-#### 8.3 Review Result Classification and Return
+#### 8.3 Result Classification (메인 에이전트)
 
-```classification
-🟢 PASS: No issues
-🟡 MINOR: Minor improvements (can proceed)
-🔴 MAJOR: Significant fix required
-🔴 CRITICAL: Immediate fix required
 ```
+🟢 PASS: 이슈 없음
+🟡 MINOR: 사소한 개선 (진행 가능)
+🔴 MAJOR: 중요 수정 필요
+🔴 CRITICAL: 즉시 수정 필요
 
-```return
-Code Reviewer returns only the list of issues.
-It does not make fixes. (Harness forwards to JUDGE)
-
-🟢 PASS / MINOR only → Harness proceeds to Phase 9
-🔴 MAJOR / CRITICAL → Harness executes JUDGE phase
+🟢 PASS / MINOR만 → Phase 9 진행
+🔴 MAJOR / CRITICAL → JUDGE 단계 실행
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### JUDGE: RTM-BASED LOOPBACK EVALUATION
+### JUDGE: RTM-BASED LOOPBACK EVALUATION (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Executor**: Harness (main orchestrator's own logic)
-**Input**: P7 test results or P8 review results
-**Evaluation Criteria**: RTM reverse tracing
+**실행**: 메인 에이전트 직접 (P7 또는 P8 이후)
 
 #### RTM Evaluation Process
 
 ```
-STEP 1: Failure Detection
-→ FAIL returned from P7 Test Runner or P8 Code Reviewer
+STEP 1: 실패 감지
+→ P7 테스트 실패 또는 P8 리뷰 MAJOR/CRITICAL
 
-STEP 2: RTM Lookup
-→ Reverse trace from failed TC-ID to REQ-ID, implementation location, and TC mapping in RTM
+STEP 2: RTM 역추적
+→ 실패한 TC-ID → REQ-ID → 구현 위치 → 아키텍처
 
-STEP 3: Root Cause Classification
-→ Auto-classify into 3 cause types based on error pattern + RTM mapping
+STEP 3: 원인 분류 (3가지)
+→ Impl Bug / Test Design / Arch Issue
 
-STEP 4: Phase Regression + RTM Update
-→ Regress to the appropriate phase based on cause type
-→ Record error information in .workflow/loopback-context.md
+STEP 4: Phase 회귀 + 기록
+→ .workflow/loopback-context.md에 에러 정보 기록
+```
+
+#### Test Quality Check (STEP 0 — P7 JUDGE 시)
+
+```
+E2E 테스트에서 Mock 사용 여부 확인:
+→ Mock 사용 시: P6으로 LOOPBACK (사유: "E2E에서 Mock 사용 금지")
+→ 이는 테스트 PASS/FAIL과 무관하게 적용
 ```
 
 #### LOOPBACK Decision Table
 
-| Trigger | RTM Evaluation Criteria | Root Cause Classification | Regression Phase | RTM Action |
-|---------|-------------------------|---------------------------|------------------|------------|
-| P7 Unit/Integration FAIL | TC-ID → REQ-ID → Implementation location | Impl Bug | → P5 | Result: FAIL, add to history |
-| P7 E2E FAIL | E2E-ID → Scenario → Multiple REQs | Test Design | → P6 | Readjust TC mapping |
-| P7 Integration FAIL (integration) | IT-ID → Integration point → Architecture | Arch Issue | → P3 | Change affected REQ status |
-| P8 Code Quality | File:line → REQ-ID reverse trace | Impl Bug | → P5 | Update implementation location |
-| P8 CRITICAL | REQ acceptance criteria not met | Arch Issue | → P3 | Architecture redesign |
+| Trigger | Root Cause | Regression Phase |
+|---------|-----------|------------------|
+| P7 Unit/Integration FAIL | Impl Bug | → P5 |
+| P7 E2E FAIL | Test Design | → P6 |
+| P7 Integration FAIL (연동) | Arch Issue | → P3 |
+| P7 E2E Mock 사용 | E2E 미달 | → P6 |
+| P8 MAJOR (코드 품질) | Impl Bug | → P5 |
+| P8 CRITICAL | Arch Issue | → P3 |
 
 #### LOOPBACK Limit Policy
 
-```loopback-policy
-max_total: 5              # Total LOOPBACK upper limit
-max_per_phase: 2          # Same-phase regression upper limit
+```
+max_total: 5
+max_per_phase: 2
 
-on_limit_exceeded:
-  same_phase_twice:
-    action: escalate_to_parent_phase
-    # Failed twice at P5 → escalate to P3
-  total_exceeded:
-    action: generate_partial_report
-    # Move to Phase 9, generate report with unresolved issues
+same_phase_twice → escalate_to_parent_phase (P5→P3)
+total_exceeded → generate_partial_report → P9
 ```
 
 #### LOOPBACK Context File
 
-On regression, record in `.workflow/loopback-context.md`:
-
 ```markdown
 ## LOOPBACK #N
-- Cause: [P7 Unit Test failure / P8 Code Review CRITICAL / ...]
-- Failed test: [TC-ID] (file:line)
-- Error: [error message]
-- RTM reverse trace: TC-ID → REQ-ID → Implementation location
-- Regression target: Phase X
-- Instructions: [specific fix instructions]
+- Cause: [원인]
+- Failed: [TC-ID 또는 리뷰 이슈] (file:line)
+- Error: [에러 메시지]
+- RTM Trace: TC-ID → REQ-ID → Impl Location
+- Target: Phase X
+- Instructions: [구체적 수정 지시]
 ```
 
-#### Artifact Update Matrix on LOOPBACK
+#### Artifact Update Matrix
 
-```update-matrix
-┌──────────────────────────────────────────────────────────────────────┐
-│ LOOPBACK Scenario          │ RTM │ Architecture │ Tests │ Implementation │
-├──────────────────────────────────────────────────────────────────────┤
-│ → P5 (Impl Bug)           │ ✅  │      -       │   -   │      ✅        │
-│ → P6 (Test Design)        │ ✅  │      -       │  ✅   │       -        │
-│ → P3 (Arch Issue)         │ ✅  │     ✅       │  ✅   │      ✅        │
-└──────────────────────────────────────────────────────────────────────┘
+```
+→ P5 (Impl Bug):    RTM ✅  Architecture -   Tests -   Impl ✅
+→ P6 (Test Design):  RTM ✅  Architecture -   Tests ✅  Impl -
+→ P3 (Arch Issue):   RTM ✅  Architecture ✅  Tests ✅  Impl ✅
 ```
 
 ---
 
 ### ═══════════════════════════════════════════════════════════════
-### PHASE 9: COMPLETION REPORT
+### PHASE 9: COMPLETION REPORT (메인 에이전트 직접)
 ### ═══════════════════════════════════════════════════════════════
 
-**Agent**: Report Writer
-**Tools**: Read, Write
+**실행**: 메인 에이전트 직접
 **Output**: `reports/[feature]-completion.md`
-
-#### 9.1 Completion Report Creation
 
 ```markdown
 # Completion Report: [Feature Name]
 
 ## Metadata
-- Feature: [Feature Name]
-- Workflow: HALO (Harness-Agentic Loopback Orchestration)
+- Workflow: HALO v2
 - Completed: [date]
-- Total Phases: 9 + Judge
 - LOOPBACK count: N
 
 ## 1. Feature Summary
-[Description of implemented feature]
 
 ## 2. Artifact List
-
-| Type | File Path |
-|------|-----------|
-| Requirements | docs/requirements/[feature].md |
-| RTM | docs/requirements/[feature]-rtm.md |
-| Architecture | docs/architecture/[feature].md |
-| Unit Test | tests/unit/[feature].* |
-| Integration Test | tests/integration/[feature].* |
-| E2E Test | tests/e2e/[feature].* |
-| Implementation | src/[feature]/* |
+| Type | Path |
+|------|------|
 
 ## 3. RTM Final State
-
-| REQ-ID | Requirement | TC | Implementation Location | Result |
-|--------|-------------|-----|-------------------------|--------|
-| REQ-001 | [description] | UT-001, IT-001, E2E-001 | src/...:15-45 | ✅ |
-
-**Coverage**: 100% (X/X requirements verified)
+| REQ-ID | Requirement | TC | Impl Location | Result |
+|--------|-------------|-----|---------------|--------|
 
 ## 4. Code Review Results
-
-### Review Summary
-- Total issues: X
-- Critical: 0
-- Major: Y (resolved)
-- Minor: Z
-
-### Issue Details
 | # | Type | File:Line | Issue | Resolution |
 |---|------|-----------|-------|------------|
-| 1 | MAJOR | path:45 | [description] | ✅ Fixed |
 
 ## 5. Test Results
-
-| Level | Total | Passed | Failed | Coverage |
-|-------|-------|--------|--------|----------|
-| Unit | X | X | 0 | 85% |
-| Integration | Y | Y | 0 | - |
-| E2E | Z | Z | 0 | - |
+| Level | Total | Passed | Failed |
+|-------|-------|--------|--------|
 
 ## 6. LOOPBACK History
+| # | Phase | Cause | Resolution |
+|---|-------|-------|------------|
 
-| # | Phase | Cause | RTM Evaluation | Resolution |
-|---|-------|-------|----------------|------------|
-| 1 | P7 → P5 | Unit Test failure | TC-001→REQ-001→src/:42 | Implementation fix |
-
-## 7. Next Steps (Optional)
-- [ ] Git commit
-- [ ] Create PR
-- [ ] Implement additional features
+## 7. Next Steps
 ```
 
 ---
 
 ## WORKFLOW FLAGS
 
-```flags
-# Default flags
---autonomous        # Autonomous mode (default): Full execution without user intervention
---skip-review       # Skip code review
---max-loops N       # Maximum LOOPBACK count (default: 5)
---coverage N        # Target coverage % (default: 80)
-
-# Skip flags
---skip-exploration  # Skip codebase exploration
---skip-architecture # Skip architecture design (for simple features)
-
-# Parallel agents
---parallel N        # Number of parallel agents (default: 3)
---confidence N      # Minimum confidence % (default: 80)
+```
+--autonomous        # 자율 모드 (기본값)
+--skip-review       # 코드 리뷰 스킵
+--skip-exploration  # 코드베이스 탐색 스킵
+--skip-architecture # 아키텍처 설계 스킵 (단순 기능)
+--max-loops N       # 최대 LOOPBACK (기본: 5)
+--parallel N        # 병렬 에이전트 수 (기본: 3)
+--confidence N      # 최소 신뢰도 % (기본: 80)
 ```
 
 ---
 
 ## NOW EXECUTING...
 
-Based on the HALO Workflow protocol above, execution begins for the following request:
-
 **Feature Request**: $ARGUMENTS
 
----
-
-**Phase 1: REQUIREMENTS ANALYSIS starting...**
+**Phase 1: REQUIREMENTS ANALYSIS 시작...**

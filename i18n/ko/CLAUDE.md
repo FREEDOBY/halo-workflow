@@ -1,21 +1,27 @@
 # HALO Workflow Project
 
-## Usage
+## 사용법
 ```
 /halo-workflow [feature description]
 ```
 
-## Core Principles
-- **RTM is Single Source of Truth** — `docs/requirements/*-rtm.md`
-- **File = Agent Interface** — 에이전트 간 통신은 파일 시스템으로만
-- **LOOPBACK은 요구사항을 바꾸지 않음** — P1 회귀 없음 (요구사항 변경 = 새 사이클)
+## 핵심 원칙
+- **Main Agent First** — 순차 작업은 메인 에이전트가 직접 수행. 서브에이전트는 병렬만.
+- **RTM = Single Source of Truth** — `docs/requirements/*-rtm.md`
+- **File = Interface** — 에이전트 간 통신과 context 복구는 파일 시스템으로만
+- **Constraint Verification** — 외부 의존성/배포 환경 가정은 반드시 실제 호출로 검증
+- **Real E2E** — E2E 테스트는 실제 실행 환경에서 수행. Mock 금지.
+- **LOOPBACK은 요구사항을 바꾸지 않음** — 요구사항 변경 = 새 사이클
 - **Max 5 LOOPBACK, per-phase 2회** — 초과 시 Partial Report 생성
 
-## 3-Layer Architecture
-1. **Harness** — 메인 오케스트레이터, 상태 머신, RTM Judge
-2. **AI Agents** — Phase별 격리 서브에이전트, 도구 제한
-3. **Artifacts** — 파일 시스템 (docs/, tests/, src/, reports/)
+## 실행 모델
+- **메인 직접** (6 Phases): P1 요구사항, P4 테스트, P5 구현, P6 IT/E2E, P7 실행, P9 보고
+- **서브에이전트** (3 Phases): P2 정찰, P3 경쟁설계, P8 리뷰
 
-## Agent Definitions
-`.claude/commands/agents/` 폴더에 Phase별 에이전트가 정의되어 있습니다.
-메인 오케스트레이터가 Phase 진입 시 해당 에이전트 프롬프트를 로드합니다.
+## 서브에이전트 역할
+- **P2 정찰병**: 핵심 파일 목록 보고 → 메인이 직접 Read
+- **P3 경쟁설계**: 설계안 + 참조 코드 보고 → 메인이 직접 확인 후 확정
+- **P8 리뷰어**: 관점별 이슈 보고 → 메인이 종합 판단
+
+## 에이전트 정의
+`.claude/commands/agents/` 폴더에 서브에이전트(P2, P3, P8)가 정의되어 있습니다.

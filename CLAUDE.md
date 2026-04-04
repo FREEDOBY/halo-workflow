@@ -6,16 +6,22 @@
 ```
 
 ## Core Principles
-- **RTM is Single Source of Truth** -- `docs/requirements/*-rtm.md`
-- **File = Agent Interface** -- All inter-agent communication is file-system only
-- **LOOPBACK never changes requirements** -- No P1 regression (requirement changes = new cycle)
-- **Max 5 LOOPBACK, per-phase 2 max** -- Exceeding limit generates a Partial Report
+- **Main Agent First** — Sequential work is done by the main agent directly. Sub-agents for parallel only.
+- **RTM = Single Source of Truth** — `docs/requirements/*-rtm.md`
+- **File = Interface** — Inter-agent communication and context recovery via file system only
+- **Constraint Verification** — External API/deployment assumptions must be verified by actual calls
+- **Real E2E** — E2E tests run in real environment. No mocks allowed.
+- **LOOPBACK never changes requirements** — Requirement changes = new cycle
+- **Max 5 LOOPBACK, per-phase 2 max** — Exceeding limit generates a Partial Report
 
-## 3-Layer Architecture
-1. **Harness** -- Main orchestrator, state machine, RTM Judge
-2. **AI Agents** -- Phase-isolated sub-agents with restricted tool access
-3. **Artifacts** -- File system (docs/, tests/, src/, reports/)
+## Execution Model
+- **Main direct** (6 Phases): P1 requirements, P4 tests, P5 implementation, P6 IT/E2E, P7 execution, P9 report
+- **Sub-agents** (3 Phases): P2 scouting, P3 competing designs, P8 review
+
+## Sub-Agent Roles
+- **P2 Scouts**: Report key file lists → Main reads directly
+- **P3 Competing Designs**: Design proposals + referenced code → Main reviews and finalizes
+- **P8 Reviewers**: Report issues by perspective → Main synthesizes judgment
 
 ## Agent Definitions
-Phase-specific agents are defined in `.claude/commands/agents/`.
-The main orchestrator loads the corresponding agent prompt upon entering each phase.
+Sub-agent definitions (P2, P3, P8) are in `.claude/commands/agents/`.

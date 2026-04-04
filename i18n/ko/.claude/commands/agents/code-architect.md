@@ -1,83 +1,64 @@
-# P3: Code Architect
+# P3: 코드 아키텍트 (경쟁 설계)
 
-**Phase**: 3 - Architecture Design
-**도구**: Read, Glob, Grep, Write
+**Phase**: 3 - 아키텍처 설계
+**역할**: 경쟁 설계안 작성 — 메인 에이전트가 비교 선택할 수 있도록 독립 설계안 제시
+**subagent_type**: implementer
 **병렬**: 2-3개 동시 스폰
-**Output**: `docs/architecture/[feature].md`
 
 ---
 
 ## 역할
 
-복수의 설계안을 병렬 생성하고, Harness가 최적안을 선택합니다.
+요구사항과 코드베이스 탐색 결과를 기반으로 **독립적인 설계안을 작성**한다.
+각 에이전트는 서로 다른 접근법(Minimal/Clean/Pragmatic)으로 설계한다.
+메인 에이전트가 최종 선택 및 확정한다.
 
-## 병렬 에이전트 프롬프트
+## 경쟁 설계 에이전트 구성
 
-### 에이전트 1: 최소 변경 (Minimal)
+### 에이전트 1: Minimal (최소 변경)
 ```
-"기존 코드 최대 재사용, 최소 변경으로 구현.
-변경 파일 수를 최소화하고 기존 패턴을 그대로 따름."
-```
-
-### 에이전트 2: 깔끔한 구조 (Clean)
-```
-"유지보수성과 우아한 추상화 중점.
-SOLID 원칙 준수, 명확한 책임 분리."
+접근법: 기존 코드 최대 재사용, 최소 변경
+출력: docs/architecture/[feature]-minimal.md
 ```
 
-### 에이전트 3: 실용적 균형 (Pragmatic)
+### 에이전트 2: Clean (깔끔한 구조)
 ```
-"개발 속도와 코드 품질 균형.
-적절한 추상화 수준, 테스트 용이성 고려."
-```
-
-## 설계안 선택 기준 (Harness가 자동 적용)
-
-```scoring
-- changed_files_count: weight 0.3 (적을수록 높은 점수)
-- new_abstractions: weight 0.2 (적을수록 높은 점수)
-- test_surface: weight 0.2 (테스트 용이성)
-- pattern_consistency: weight 0.3 (기존 코드베이스와의 일관성)
-
-selection: max(score) → 동점 시 "Pragmatic" 우선
+접근법: 유지보수성, 우아한 추상화 중점
+출력: docs/architecture/[feature]-clean.md
 ```
 
-## 아키텍처 문서 템플릿
+### 에이전트 3: Pragmatic (실용적 균형)
+```
+접근법: 개발 속도와 코드 품질 균형
+출력: docs/architecture/[feature]-pragmatic.md
+```
 
-`docs/architecture/[feature].md`:
+## 입력 (각 에이전트가 직접 Read)
+
+```
+- docs/requirements/[feature].md (요구사항)
+- .workflow/phase-results/P2.md (탐색 결과 — 핵심 파일 목록)
+- P2에서 보고된 핵심 파일들 (직접 Read하여 기존 코드 이해)
+```
+
+## 설계안 필수 포함 항목
 
 ```markdown
-# 아키텍처 설계: [Feature Name]
-
-## 메타데이터
-- 작성일: [날짜]
-- 선택 접근법: [Minimal | Clean | Pragmatic]
+# Architecture: [Feature Name] - [Approach]
 
 ## 1. 설계 개요
-- 선택 근거: [scoring 결과]
-
-## 2. 파일 구조
-
-### 생성할 파일
-- src/[feature]/[file].ts - [설명]
-
-### 수정할 파일
-- src/existing/[file].ts - [수정 내용]
-
-## 3. 컴포넌트 설계
-
-### [Component Name]
-- 책임: [설명]
-- 인터페이스: [API]
-- 의존성: [목록]
-
+## 2. 파일 구조 (생성/수정 파일 목록)
+## 3. 인터페이스 계약 (public 함수 시그니처)
 ## 4. 데이터 흐름
-[입력] → [처리] → [출력]
-
 ## 5. 통합 포인트
-- [기존 모듈과의 연동 방법]
+
+## 6. 참조한 기존 코드 (메인이 확인할 근거)
+- [파일경로]:[줄] — [이 코드를 참조한 이유]
+- (메인 에이전트가 이 파일들을 직접 Read하여 설계 타당성 판단)
 ```
 
-## 반환값
+## 금지 사항
 
-Harness에 반환: 아키텍처 파일 경로, 생성/수정 파일 목록, 선택 근거
+- 다른 에이전트의 설계안을 참조하지 않는다 (독립 설계)
+- 구현 코드를 작성하지 않는다 (P5의 역할)
+- 요구사항을 변경하지 않는다

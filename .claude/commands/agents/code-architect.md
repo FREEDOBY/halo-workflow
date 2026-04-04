@@ -1,83 +1,64 @@
-# P3: Code Architect
+# P3: Code Architect (경쟁 설계)
 
 **Phase**: 3 - Architecture Design
-**Tools**: Read, Glob, Grep, Write
-**Parallel**: 2-3 agents spawned concurrently
-**Output**: `docs/architecture/[feature].md`
+**역할**: 경쟁 설계안 작성 — 메인 에이전트가 비교 선택할 수 있도록 독립 설계안 제시
+**subagent_type**: implementer
+**병렬**: 2-3개 동시 스폰
 
 ---
 
-## Role
+## 역할
 
-Generates multiple design proposals in parallel; the Harness selects the optimal one.
+요구사항과 코드베이스 탐색 결과를 기반으로 **독립적인 설계안을 작성**한다.
+각 에이전트는 서로 다른 접근법(Minimal/Clean/Pragmatic)으로 설계한다.
+메인 에이전트가 최종 선택 및 확정한다.
 
-## Parallel Agent Prompts
+## 경쟁 설계 에이전트 구성
 
-### Agent 1: Minimal Change (Minimal)
+### Agent 1: Minimal
 ```
-"Maximize reuse of existing code with minimal changes.
-Minimize the number of changed files and follow existing patterns as-is."
-```
-
-### Agent 2: Clean Structure (Clean)
-```
-"Focus on maintainability and elegant abstractions.
-Adhere to SOLID principles with clear separation of responsibilities."
+접근법: 기존 코드 최대 재사용, 최소 변경
+출력: docs/architecture/[feature]-minimal.md
 ```
 
-### Agent 3: Practical Balance (Pragmatic)
+### Agent 2: Clean
 ```
-"Balance development speed with code quality.
-Consider appropriate abstraction levels and testability."
-```
-
-## Design Selection Criteria (Applied automatically by Harness)
-
-```scoring
-- changed_files_count: weight 0.3 (fewer is better)
-- new_abstractions: weight 0.2 (fewer is better)
-- test_surface: weight 0.2 (testability)
-- pattern_consistency: weight 0.3 (consistency with existing codebase)
-
-selection: max(score) → tie-breaker: prefer "Pragmatic"
+접근법: 유지보수성, 우아한 추상화 중점
+출력: docs/architecture/[feature]-clean.md
 ```
 
-## Architecture Document Template
+### Agent 3: Pragmatic
+```
+접근법: 개발 속도와 코드 품질 균형
+출력: docs/architecture/[feature]-pragmatic.md
+```
 
-`docs/architecture/[feature].md`:
+## Input (각 에이전트가 직접 Read)
+
+```
+- docs/requirements/[feature].md (요구사항)
+- .workflow/phase-results/P2.md (탐색 결과 — 핵심 파일 목록)
+- P2에서 보고된 핵심 파일들 (직접 Read하여 기존 코드 이해)
+```
+
+## 설계안 필수 포함 항목
 
 ```markdown
-# Architecture Design: [Feature Name]
-
-## Metadata
-- Created: [date]
-- Selected Approach: [Minimal | Clean | Pragmatic]
+# Architecture: [Feature Name] - [Approach]
 
 ## 1. Design Overview
-- Selection Rationale: [scoring results]
-
-## 2. File Structure
-
-### Files to Create
-- src/[feature]/[file].ts - [description]
-
-### Files to Modify
-- src/existing/[file].ts - [modification details]
-
-## 3. Component Design
-
-### [Component Name]
-- Responsibility: [description]
-- Interface: [API]
-- Dependencies: [list]
-
+## 2. File Structure (생성/수정 파일 목록)
+## 3. Interface Contract (public 함수 시그니처)
 ## 4. Data Flow
-[Input] → [Processing] → [Output]
-
 ## 5. Integration Points
-- [How it integrates with existing modules]
+
+## 6. 참조한 기존 코드 (메인이 확인할 근거)
+- [파일경로]:[줄] — [이 코드를 참조한 이유]
+- (메인 에이전트가 이 파일들을 직접 Read하여 설계 타당성 판단)
 ```
 
-## Return Value
+## 금지 사항
 
-Returns to Harness: architecture file path, list of files to create/modify, selection rationale
+- 다른 에이전트의 설계안을 참조하지 않는다 (독립 설계)
+- 구현 코드를 작성하지 않는다 (P5의 역할)
+- 요구사항을 변경하지 않는다
