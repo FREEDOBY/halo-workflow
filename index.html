@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, initial-scale=1.0">
-<title>HALO Workflow v2</title>
+<title>HALO Workflow v3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -396,25 +396,25 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <h1>HALO Workflow v2</h1>
+    <h1>HALO Workflow v3</h1>
     <span class="version">Harness-Agentic Loopback Orchestration</span>
   </div>
-  <div class="header-right">Main Agent First &times; Parallel Sub-Agents</div>
+  <div class="header-right">RTM-Centric &times; Main Agent First</div>
 </div>
 
 <!-- LAYER LABELS -->
 <div class="layer-label" style="color:#2563eb; top:75px; height:260px;">MAIN AGENT</div>
-<div class="layer-label" style="color:#7c3aed; top:380px; height:280px;">SUB-AGENTS</div>
+<div class="layer-label" style="color:#7c3aed; top:380px; height:280px;">REVIEW + JUDGE</div>
 <div class="layer-label" style="color:#0891b2; top:680px; height:180px;">ARTIFACTS</div>
 
 <!-- ===== LAYER 1: MAIN AGENT ===== -->
 <div class="main-layer">
   <div class="layer-header">
     <div class="icon icon-main">&#9881;</div>
-    <h2>Main Agent &mdash; Executor + Router + RTM Judge</h2>
-    <span class="tag">6 Phases Direct</span>
-    <span class="tag">3 Phases Spawn</span>
-    <span class="tag">Context Continuous</span>
+    <h2>Main Agent &mdash; Executor + Router</h2>
+    <span class="tag">8 Phases Direct</span>
+    <span class="tag">P8 Review + JUDGE</span>
+    <span class="tag">Zero Context Breaks</span>
   </div>
 
   <div class="phase-row">
@@ -424,16 +424,16 @@
       <div class="p-name">Requirements<br><span style="font-size:8px;opacity:0.6">+ Constraint</span></div>
     </div>
     <div class="p-arrow"></div>
-    <div class="phase-node pn-sub">
-      <span class="exec-badge badge-sub">&times;2-3</span>
+    <div class="phase-node pn-main">
+      <span class="exec-badge badge-main">Main</span>
       <div class="p-icon">&#128269;</div><div class="p-num">P2</div>
-      <div class="p-name">Exploration<br><span style="font-size:8px;opacity:0.6">Scout</span></div>
+      <div class="p-name">Exploration<br><span style="font-size:8px;opacity:0.6">Direct</span></div>
     </div>
     <div class="p-arrow"></div>
-    <div class="phase-node pn-sub">
-      <span class="exec-badge badge-sub">&times;2-3</span>
+    <div class="phase-node pn-main">
+      <span class="exec-badge badge-main">Main</span>
       <div class="p-icon">&#128208;</div><div class="p-num">P3</div>
-      <div class="p-name">Architecture<br><span style="font-size:8px;opacity:0.6">Compete</span></div>
+      <div class="p-name">Architecture<br><span style="font-size:8px;opacity:0.6">Direct</span></div>
     </div>
     <div class="p-arrow"></div>
     <div class="phase-node pn-main">
@@ -467,8 +467,9 @@
     </div>
     <div class="p-arrow"></div>
     <div class="phase-node pn-judge">
+      <span class="exec-badge badge-sub">&times;1</span>
       <div class="p-icon">&#128260;</div><div class="p-num">JUDGE</div>
-      <div class="p-name" style="font-size:9px">RTM<br>Loopback</div>
+      <div class="p-name" style="font-size:9px">RTM Only<br>Loopback</div>
     </div>
     <div class="p-arrow"></div>
     <div class="phase-node pn-main">
@@ -490,12 +491,15 @@
     <div class="rtm-line"></div>
     <div class="rtm-group"><div class="rtm-dot"></div><div class="rtm-label">P7 result</div></div>
     <div class="rtm-line"></div>
+    <div class="rtm-group"><div class="rtm-dot" style="background:#7c3aed;border-color:#c4b5fd"></div><div class="rtm-label">P8 review</div></div>
+    <div class="rtm-line"></div>
     <div class="rtm-group"><div class="rtm-dot" style="background:#dc2626;border-color:#fca5a5"></div><div class="rtm-label">JUDGE</div></div>
   </div>
 
   <!-- LOOPBACK indicators -->
   <div class="loopback-area">
     <div class="lb-arrow lb-p3">&#8592; Arch Issue &rarr; P3</div>
+    <div class="lb-arrow lb-p5" style="color:#ea580c;border-color:#fed7aa;background:#fff7ed">&#8592; Test Bug &rarr; P4</div>
     <div class="lb-arrow lb-p5">&#8592; Impl Bug &rarr; P5</div>
     <div class="lb-arrow lb-p6">&#8592; Test Design &rarr; P6</div>
   </div>
@@ -503,70 +507,23 @@
 
 <!-- CONNECTOR 1 -->
 <div class="connector" style="top:340px">
-  <div class="conn-label">spawn(scout/compete/review) &rarr; <em>Main reads result + files directly</em></div>
+  <div class="conn-label">P8: spawn(review &times;3) &rarr; Main reflects issues to RTM &rarr; JUDGE: spawn(&times;1) reads <em>RTM only</em></div>
 </div>
 
 <!-- ===== LAYER 2: SUB-AGENTS ===== -->
 <div class="sub-layer">
   <div class="layer-header">
     <div class="icon icon-sub">&#129302;</div>
-    <h2>Sub-Agents &mdash; Parallel Only (Scout / Compete / Review)</h2>
-    <span class="tag">subagent_type: implementer</span>
+    <h2>Sub-Agents &mdash; Review (P8) + JUDGE only</h2>
+    <span class="tag">P8: Review &times;3</span>
+    <span class="tag">JUDGE: RTM &times;1</span>
     <span class="tag">File paths only, no summary</span>
   </div>
 
   <div class="sub-grid">
-    <!-- P2 -->
-    <div class="sub-group">
-      <h3><span class="phase-tag">P2</span> Codebase Exploration &mdash; Scouts</h3>
-      <div class="sub-role">
-        <div class="role-card">
-          <div class="role-title">Agent 1: Feature Scout</div>
-          <div class="role-desc">Find similar features,<br>report key file paths</div>
-        </div>
-        <div class="role-card">
-          <div class="role-title">Agent 2: Arch Scout</div>
-          <div class="role-desc">Map architecture layers,<br>report key file paths</div>
-        </div>
-        <div class="role-card">
-          <div class="role-title">Agent 3: Pattern Scout</div>
-          <div class="role-desc">Find test/code patterns,<br>report key file paths</div>
-        </div>
-      </div>
-      <div class="flow-arrow">
-        <span class="flow-step step-sub">Scouts report file:line list</span>
-        <span class="flow-icon">&rarr;</span>
-        <span class="flow-step step-main">Main reads files directly</span>
-      </div>
-    </div>
-
-    <!-- P3 -->
-    <div class="sub-group">
-      <h3><span class="phase-tag">P3</span> Architecture Design &mdash; Competing</h3>
-      <div class="sub-role">
-        <div class="role-card">
-          <div class="role-title">Agent 1: Minimal</div>
-          <div class="role-desc">Max reuse,<br>min changes</div>
-        </div>
-        <div class="role-card">
-          <div class="role-title">Agent 2: Clean</div>
-          <div class="role-desc">SOLID,<br>maintainability</div>
-        </div>
-        <div class="role-card">
-          <div class="role-title">Agent 3: Pragmatic</div>
-          <div class="role-desc">Speed + quality<br>balance</div>
-        </div>
-      </div>
-      <div class="flow-arrow">
-        <span class="flow-step step-sub">Each writes design + ref files</span>
-        <span class="flow-icon">&rarr;</span>
-        <span class="flow-step step-main">Main reads + selects + finalizes</span>
-      </div>
-    </div>
-
     <!-- P8 -->
     <div class="sub-group">
-      <h3><span class="phase-tag">P8</span> Code Review &mdash; Perspectives</h3>
+      <h3><span class="phase-tag">P8</span> Code Review &mdash; 3 Perspectives</h3>
       <div class="sub-role">
         <div class="role-card">
           <div class="role-title">Agent 1: Quality</div>
@@ -582,9 +539,33 @@
         </div>
       </div>
       <div class="flow-arrow">
-        <span class="flow-step step-sub">Each reports issues</span>
+        <span class="flow-step step-sub">Each reports issues (80%+ confidence)</span>
         <span class="flow-icon">&rarr;</span>
-        <span class="flow-step step-main">Main synthesizes judgment</span>
+        <span class="flow-step step-main">Main reflects to RTM Review column</span>
+      </div>
+    </div>
+
+    <!-- JUDGE -->
+    <div class="sub-group" style="border-color:#fde68a;background:linear-gradient(135deg,#fffefb,#fffbeb)">
+      <h3><span class="phase-tag" style="background:#f59e0b">JUDGE</span> RTM-Based LOOPBACK Evaluation</h3>
+      <div class="sub-role">
+        <div class="role-card" style="background:#fffbeb;border-color:#fde68a">
+          <div class="role-title" style="color:#92400e">Input: RTM only</div>
+          <div class="role-desc">REQ &harr; TC mapping<br>Impl location (file:line)<br>Result (PASS/FAIL)<br>Review (MAJOR/CRITICAL)</div>
+        </div>
+        <div class="role-card" style="background:#fffbeb;border-color:#fde68a">
+          <div class="role-title" style="color:#92400e">Process</div>
+          <div class="role-desc">1. Find FAIL/CRITICAL in RTM<br>2. Trace TC &rarr; REQ &rarr; file:line<br>3. Read code if needed<br>4. Classify root cause</div>
+        </div>
+        <div class="role-card" style="background:#fffbeb;border-color:#fde68a">
+          <div class="role-title" style="color:#92400e">Output</div>
+          <div class="role-desc">PASS &rarr; P9<br>LOOPBACK &rarr; P3/P4/P5/P6<br>+ root cause + instructions</div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <span class="flow-step" style="background:#fffbeb;color:#92400e">Reads RTM &rarr; classifies root cause</span>
+        <span class="flow-icon">&rarr;</span>
+        <span class="flow-step step-main">Main executes LOOPBACK or proceeds to P9</span>
       </div>
     </div>
   </div>
@@ -655,14 +636,14 @@
 <div class="footer">
   <div class="footer-stats">
     <div class="stat"><span class="stat-value">9</span><span class="stat-label">Phases</span></div>
-    <div class="stat"><span class="stat-value">6</span><span class="stat-label">Main<br>Direct</span></div>
-    <div class="stat"><span class="stat-value">3</span><span class="stat-label">Sub-Agent<br>Parallel</span></div>
+    <div class="stat"><span class="stat-value">8</span><span class="stat-label">Main<br>Direct</span></div>
+    <div class="stat"><span class="stat-value">2</span><span class="stat-label">Sub-Agent<br>Points</span></div>
     <div class="stat"><span class="stat-value">4</span><span class="stat-label">Test<br>Levels</span></div>
     <div class="stat"><span class="stat-value">5</span><span class="stat-label">Max<br>LOOPBACKs</span></div>
   </div>
   <div class="footer-pills">
     <span class="pill pill-blue">Main Agent First</span>
-    <span class="pill pill-purple">Scout / Compete / Review</span>
+    <span class="pill pill-purple">Review + JUDGE</span>
     <span class="pill pill-red">TDD RED</span>
     <span class="pill pill-green">TDD GREEN + Real E2E</span>
     <span class="pill pill-amber">RTM Traceability</span>
