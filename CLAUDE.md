@@ -6,22 +6,20 @@
 ```
 
 ## Core Principles
-- **Main Agent First** — Sequential work is done by the main agent directly. Sub-agents for parallel only.
-- **RTM = Single Source of Truth** — `docs/requirements/*-rtm.md`
-- **File = Interface** — Inter-agent communication and context recovery via file system only
-- **Constraint Verification** — External API/deployment assumptions must be verified by actual calls
-- **Real E2E** — E2E tests run in real environment. No mocks allowed.
-- **LOOPBACK never changes requirements** — Requirement changes = new cycle
-- **Max 5 LOOPBACK, per-phase 2 max** — Exceeding limit generates a Partial Report
+- **RTM = Single Source of Truth** — 매 Phase가 RTM 업데이트. JUDGE는 RTM만 읽고 판별.
+- **Main Agent First** — P1~P7 메인 연속 실행. 서브는 P8(리뷰)과 JUDGE(판별)에만.
+- **File = Interface** — 에이전트 간 통신과 context 복구는 파일로만.
+- **Constraint Verification** — 외부 의존성은 실제 호출로 검증.
+- **Real E2E** — E2E는 실제 환경. Mock 금지.
+- **LOOPBACK never changes requirements** — 요구사항 변경 = 새 사이클.
+- **Max 5 LOOPBACK, per-phase 2 max** — 초과 시 Partial Report → P9.
 
 ## Execution Model
-- **Main direct** (6 Phases): P1 requirements, P4 tests, P5 implementation, P6 IT/E2E, P7 execution, P9 report
-- **Sub-agents** (3 Phases): P2 scouting, P3 competing designs, P8 review
+- **Main direct** (8 Phases): P1→P2→P3→P4→P5→P6→P7→P9 — 컨텍스트 단절 0
+- **Sub-agents** (2 points): P8 review (×3), JUDGE (×1 — RTM만 읽고 판별)
 
-## Sub-Agent Roles
-- **P2 Scouts**: Report key file lists → Main reads directly
-- **P3 Competing Designs**: Design proposals + referenced code → Main reviews and finalizes
-- **P8 Reviewers**: Report issues by perspective → Main synthesizes judgment
+## RTM Flow
+P1(REQ등록) → P4(Unit TC매핑) → P5(구현위치매핑) → P6(IT/E2E TC매핑) → P7(결과기록) → P8(리뷰반영) → JUDGE(RTM읽고 판별)
 
 ## Agent Definitions
-Sub-agent definitions (P2, P3, P8) are in `.claude/commands/agents/`.
+Sub-agent definition (P8 reviewer) is in `.claude/commands/agents/`.
