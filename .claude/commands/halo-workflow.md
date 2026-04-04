@@ -310,12 +310,44 @@ reports/
 - `docs/requirements/[feature].md`
 - `docs/requirements/[feature]-rtm.md`
 
-#### 1.1 Context Gathering
+#### 1.1 Context Gathering + Greenfield 판별
 
 ```action
 1. 프로젝트 구조 분석 (Glob, Grep)
 2. 기존 코드 패턴, 기술 스택, 의존성 파악
 3. 관련 모듈/파일 식별
+
+Greenfield 판별:
+  src/ 에 코드가 없거나, 빌드 설정/의존성 파일이 없으면 → Greenfield
+  (package.json, pom.xml, go.mod, Cargo.toml, requirements.txt 등이 없음)
+```
+
+#### 1.1.1 System Decisions (Greenfield 전용 — 사용자 확인)
+
+**Greenfield 프로젝트인 경우에만 실행한다.**
+기존 코드가 있으면 기존 스택/패턴을 자동 감지하여 따르고, 이 단계를 건너뛴다.
+
+```
+사용자에게 확인받을 항목:
+1. 언어/런타임 (예: TypeScript/Node, Python, Go, Rust, Java 등)
+2. 프레임워크 (예: React, Express, Django, Spring, 없음 등)
+3. 배포 환경 (예: 브라우저 SPA, 서버, CLI, 모바일, 데스크톱)
+4. 외부 의존성 (예: 사용할 DB, API, 인증 서비스 등)
+5. 기타 중요 제약 (예: 오프라인 지원, 특정 브라우저, 성능 요구 등)
+
+질문 형식:
+  프로젝트에 기존 코드가 없습니다. 시스템 수준 결정이 필요합니다:
+  1. 언어/런타임: [추천안 제시]
+  2. 프레임워크: [추천안 제시]
+  3. 배포 환경: [추천안 제시]
+  4. 외부 의존성: [feature에서 파악된 것]
+  5. 기타 제약: [있으면 기재]
+  
+  위 내용으로 진행해도 될까요? 변경할 부분이 있으면 알려주세요.
+
+사용자 승인 후:
+  결정 사항을 요구사항 문서의 "System Decisions" 섹션에 기록
+  이후 전체 워크플로우는 이 결정을 기반으로 자율 진행 (추가 사용자 게이트 없음)
 ```
 
 #### 1.2 Requirements Derivation
@@ -372,7 +404,15 @@ reports/
 ## 4. Constraints (검증된 제약)
 - [검증 방법과 결과 포함]
 
-## 5. Decisions (결정 사항)
+## 5. System Decisions (Greenfield 전용 — 사용자 승인)
+| # | Item | Decision | Rationale |
+|---|------|----------|-----------|
+| SD-1 | Language/Runtime | | |
+| SD-2 | Framework | | |
+| SD-3 | Deploy Environment | | |
+| SD-4 | External Dependencies | | |
+
+## 6. Decisions (자동 결정 사항)
 | # | Item | Decision | Rationale |
 |---|------|----------|-----------|
 ```
