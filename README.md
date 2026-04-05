@@ -22,7 +22,7 @@ Built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). The **m
 │  MAIN AGENT  (Executor + Router)                                   │
 │                                                                    │
 │  P1 ──→ P2 ──→ P3 ──→ P4 ──→ P5 ──→ P6 ──→ P7 ──→ P8 ──→ P9  │
-│  직접   직접   직접   직접   직접   직접   직접    ↕     직접    │
+│  direct direct direct direct direct direct direct  ↕    direct   │
 │  ──────── Main continuous (zero context breaks) ─  │              │
 │                                                  Review  JUDGE    │
 │                                                  ┌─┴─┐  ┌───┐    │
