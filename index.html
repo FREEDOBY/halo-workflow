@@ -60,7 +60,7 @@
   .main-layer {
     position: absolute;
     top: 75px; left: 36px; right: 36px;
-    height: 260px;
+    height: 320px;
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border: 1.5px solid #bfdbfe;
     border-radius: 18px;
@@ -185,25 +185,20 @@
 
   .rtm-group { display: flex; flex-direction: column; align-items: center; }
 
-  /* LOOPBACK arrows area */
-  .loopback-area {
+  /* LOOPBACK SVG */
+  .loopback-svg {
     position: absolute;
-    bottom: 8px; left: 0; right: 0;
-    height: 50px;
-    display: flex; align-items: center; justify-content: center;
-    gap: 30px;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
   }
 
-  .lb-arrow {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 9px; font-weight: 600;
-    padding: 3px 10px; border-radius: 6px;
-    border: 1px solid;
+  .lb-label {
+    font-size: 9px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
   }
-
-  .lb-p3 { color: #7c3aed; border-color: #c4b5fd; background: #f5f3ff; }
-  .lb-p5 { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
-  .lb-p6 { color: #d97706; border-color: #fde68a; background: #fffbeb; }
 
   /* ===== CONNECTOR ===== */
   .connector {
@@ -226,7 +221,7 @@
   /* ===== SUB-AGENTS LAYER ===== */
   .sub-layer {
     position: absolute;
-    top: 380px; left: 36px; right: 36px;
+    top: 440px; left: 36px; right: 36px;
     background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
     border: 1.5px solid #c4b5fd;
     border-radius: 18px;
@@ -298,7 +293,7 @@
   /* ===== ARTIFACTS LAYER ===== */
   .artifacts-layer {
     position: absolute;
-    top: 680px; left: 36px; right: 36px;
+    top: 740px; left: 36px; right: 36px;
     height: 180px;
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
     border: 1.5px solid #bae6fd;
@@ -403,18 +398,19 @@
 </div>
 
 <!-- LAYER LABELS -->
-<div class="layer-label" style="color:#2563eb; top:75px; height:260px;">MAIN AGENT</div>
-<div class="layer-label" style="color:#7c3aed; top:380px; height:280px;">REVIEW + JUDGE</div>
-<div class="layer-label" style="color:#0891b2; top:680px; height:180px;">ARTIFACTS</div>
+<div class="layer-label" style="color:#2563eb; top:75px; height:320px;">WORKFLOW</div>
+<div class="layer-label" style="color:#7c3aed; top:440px; height:280px;">REVIEW + JUDGE</div>
+<div class="layer-label" style="color:#0891b2; top:740px; height:180px;">ARTIFACTS</div>
 
 <!-- ===== LAYER 1: MAIN AGENT ===== -->
 <div class="main-layer">
   <div class="layer-header">
     <div class="icon icon-main">&#9881;</div>
-    <h2>Main Agent &mdash; Executor + Router</h2>
-    <span class="tag">8 Phases Direct</span>
-    <span class="tag">P8 Review + JUDGE</span>
-    <span class="tag">Zero Context Breaks</span>
+    <h2>Workflow Process &mdash; 9 Phases + JUDGE</h2>
+    <span class="tag">P1~P7, P9 Main Direct</span>
+    <span class="tag">P8 Review &times;3</span>
+    <span class="tag">JUDGE &times;1</span>
+    <span class="tag">LOOPBACK Recovery</span>
   </div>
 
   <div class="phase-row">
@@ -496,17 +492,51 @@
     <div class="rtm-group"><div class="rtm-dot" style="background:#dc2626;border-color:#fca5a5"></div><div class="rtm-label">JUDGE</div></div>
   </div>
 
-  <!-- LOOPBACK indicators -->
-  <div class="loopback-area">
-    <div class="lb-arrow lb-p3">&#8592; Arch Issue &rarr; P3</div>
-    <div class="lb-arrow lb-p5" style="color:#ea580c;border-color:#fed7aa;background:#fff7ed">&#8592; Test Bug &rarr; P4</div>
-    <div class="lb-arrow lb-p5">&#8592; Impl Bug &rarr; P5</div>
-    <div class="lb-arrow lb-p6">&#8592; Test Design &rarr; P6</div>
-  </div>
+  <!-- LOOPBACK curved arrows (SVG) -->
+  <svg class="loopback-svg" viewBox="0 0 1848 320" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrow-p3" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#7c3aed"/>
+      </marker>
+      <marker id="arrow-p4" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#ea580c"/>
+      </marker>
+      <marker id="arrow-p5" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#dc2626"/>
+      </marker>
+      <marker id="arrow-p6" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+        <polygon points="0,0 8,3 0,6" fill="#d97706"/>
+      </marker>
+    </defs>
+
+    <!-- Arch Issue: JUDGE → P3 (deepest arc, purple) -->
+    <path d="M 1408,168 C 1408,290 544,290 544,168"
+          fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,3"
+          marker-end="url(#arrow-p3)" opacity="0.8"/>
+    <text x="976" y="288" text-anchor="middle" class="lb-label" fill="#7c3aed">Arch Issue → P3</text>
+
+    <!-- Test Bug: JUDGE → P4 (orange) -->
+    <path d="M 1408,168 C 1408,264 688,264 688,168"
+          fill="none" stroke="#ea580c" stroke-width="2" stroke-dasharray="6,3"
+          marker-end="url(#arrow-p4)" opacity="0.8"/>
+    <text x="1048" y="262" text-anchor="middle" class="lb-label" fill="#ea580c">Test Bug → P4</text>
+
+    <!-- Impl Bug: JUDGE → P5 (red) -->
+    <path d="M 1408,168 C 1408,238 832,238 832,168"
+          fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"
+          marker-end="url(#arrow-p5)" opacity="0.8"/>
+    <text x="1120" y="236" text-anchor="middle" class="lb-label" fill="#dc2626">Impl Bug → P5</text>
+
+    <!-- Test Design: JUDGE → P6 (amber) -->
+    <path d="M 1408,168 C 1408,216 976,216 976,168"
+          fill="none" stroke="#d97706" stroke-width="2" stroke-dasharray="6,3"
+          marker-end="url(#arrow-p6)" opacity="0.8"/>
+    <text x="1192" y="214" text-anchor="middle" class="lb-label" fill="#d97706">Test Design → P6</text>
+  </svg>
 </div>
 
 <!-- CONNECTOR 1 -->
-<div class="connector" style="top:340px">
+<div class="connector" style="top:400px">
   <div class="conn-label">P8: spawn(review &times;3) &rarr; Main reflects issues to RTM &rarr; JUDGE: spawn(&times;1) reads <em>RTM only</em></div>
 </div>
 
@@ -572,7 +602,7 @@
 </div>
 
 <!-- CONNECTOR 2 -->
-<div class="connector" style="top:665px">
+<div class="connector" style="top:725px">
   <div class="conn-label">Read / Write &mdash; <em>File = Interface</em> &mdash; <em>.workflow/ = Checkpoint (temp)</em> &mdash; <em>docs/ = Product (permanent)</em></div>
 </div>
 
