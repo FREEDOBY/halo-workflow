@@ -280,7 +280,8 @@ src/[feature]/                   # Implementation (P5)
 .workflow/                       # Temporary, gitignored
 ├── state.json
 ├── loopback-context.md
-└── phase-results/P{N}.md
+├── phase-results/P{N}.md
+└── reviews/P8-cycle-{N}.md      # P8 review document (per cycle)
 
 reports/[feature]-completion.md  # Completion Report (P9)
 ```
@@ -631,15 +632,52 @@ Agent 2: Bugs/Correctness        — src/, tests/
 Agent 3: Conventions/Security    — src/, docs/requirements/
 
 Report only issues with 80%+ confidence.
+Each issue MUST include REQ-ID mapping.
 ```
 
-#### 8.2 Main: Record Review Results in RTM
+#### 8.2 Main: Persist Review Document (Single Source for Review)
 
 ```
 After collecting issues from ×3 sub-agents:
-  → Record review results in RTM Review column for each REQ (PASS/MINOR/MAJOR/CRITICAL)
-  → Add P8 entry to update history
-  → Spawn JUDGE sub-agent (pass RTM path only)
+  1. Write .workflow/reviews/P8-cycle-{N}.md
+     - Per-agent original issue tables (with REQ-ID)
+     - Aggregated by REQ-ID (max severity, item refs)
+     - Summary counts (CRITICAL/MAJOR/MINOR)
+     N = current LOOPBACK cycle (state.json.loopback_count, or 0 for first run)
+
+  2. Update RTM:
+     - Review column: severity (PASS/MINOR/MAJOR/CRITICAL)
+     - Add P8 entry to update history with review doc path
+
+  3. Spawn JUDGE sub-agent — pass BOTH paths:
+     - RTM:        docs/requirements/[feature]-rtm.md
+     - Review doc: .workflow/reviews/P8-cycle-{N}.md
+```
+
+#### 8.3 Review Document Schema
+
+```markdown
+# P8 Code Review — Cycle {N}
+
+## Metadata
+- Cycle: N
+- Date: [date]
+- Feature: [feature]
+
+## Agent 1: Quality/DRY/Readability
+| # | REQ-ID | Severity | File:Line | Description | Confidence |
+
+## Agent 2: Bugs/Correctness
+| # | REQ-ID | Severity | File:Line | Description | Confidence |
+
+## Agent 3: Conventions/Security
+| # | REQ-ID | Severity | File:Line | Description | Confidence |
+
+## Aggregated by REQ-ID
+| REQ-ID | Max Severity | Issue Count | Items |
+
+## Summary
+- CRITICAL: N | MAJOR: N | MINOR: N
 ```
 
 ---
@@ -650,14 +688,22 @@ After collecting issues from ×3 sub-agents:
 
 **Purpose**: Eliminate main agent bias. Read RTM only for objective evaluation.
 
-**Input**: `docs/requirements/[feature]-rtm.md` — Read only the RTM file.
+**Agent definition**: `.claude/commands/agents/judge.md`
+**subagent_type**: `code-reviewer` (read-only tools)
+**Input**:
+  - `docs/requirements/[feature]-rtm.md` — RTM (Single Source of Truth)
+  - `.workflow/reviews/P8-cycle-{N}.md` — P8 review document (only when invoked after P8)
 **Output**: Return verdict as message (no file writes)
 
-The RTM contains all necessary information:
+The RTM contains:
 - REQ-ID ↔ TC-ID mapping
 - Impl location (file:line)
 - Test results (PASS/FAIL)
 - Review results (PASS/MINOR/MAJOR/CRITICAL)
+
+The review document contains:
+- Per-agent original issue tables (file:line, description, REQ-ID, confidence)
+- Aggregated by REQ-ID for cross-agent severity reconciliation
 
 May additionally Read test/implementation files traced back from RTM as needed.
 
@@ -712,6 +758,8 @@ After receiving JUDGE verdict:
 1. Record in .workflow/loopback-context.md:
    ## LOOPBACK #N
    - Cause / Failed Items / RTM Trace / Target / Instructions
+   - Review Doc: .workflow/reviews/P8-cycle-{N}.md (when triggered after P8)
+   → Target Phase MUST Read this loopback-context.md AND the review doc first
 
 2. Update state.json (loopback_count++, loopback_per_phase)
 

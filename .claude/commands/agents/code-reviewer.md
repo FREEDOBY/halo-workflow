@@ -2,7 +2,7 @@
 
 **Phase**: 8 - Code Review
 **역할**: 특정 관점에서 코드를 리뷰하고 이슈를 보고한다
-**subagent_type**: implementer
+**subagent_type**: code-reviewer
 **병렬**: 3개 동시 스폰
 
 ---
@@ -46,13 +46,18 @@ Input: src/, docs/requirements/[feature].md
 ## Review: [관점명]
 
 ### Issues
-| # | Severity | File:Line | Description | Confidence |
-|---|----------|-----------|-------------|------------|
+| # | REQ-ID | Severity | File:Line | Description | Confidence |
+|---|--------|----------|-----------|-------------|------------|
 
 ### Summary
 - Total: N issues
 - CRITICAL: N, MAJOR: N, MINOR: N
 ```
+
+**REQ-ID 매핑 규칙**:
+- 이슈가 특정 REQ에 명확히 귀속되면 해당 REQ-ID 기재
+- 여러 REQ에 걸치면 콤마 구분 (예: REQ-001, REQ-003)
+- 어떤 REQ에도 매핑 불가하면 `-` (구조적/공통 이슈)
 
 ## 분류 기준
 

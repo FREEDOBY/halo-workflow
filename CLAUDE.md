@@ -22,4 +22,6 @@
 P1(REQ등록) → P4(Unit TC매핑) → P5(구현위치매핑) → P6(IT/E2E TC매핑) → P7(결과기록) → P8(리뷰반영) → JUDGE(RTM읽고 판별)
 
 ## Agent Definitions
-Sub-agent definition (P8 reviewer) is in `.claude/commands/agents/`.
+Sub-agent definitions are in `.claude/commands/agents/`:
+- `code-reviewer.md` — P8 review (×3 parallel, subagent_type: `code-reviewer`)
+- `judge.md` — JUDGE (×1, subagent_type: `code-reviewer`, RTM-only evaluation)
