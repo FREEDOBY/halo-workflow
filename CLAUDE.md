@@ -2,8 +2,12 @@
 
 ## Usage
 ```
-/halo-workflow [feature description]
+/halo-workflow [feature description]       # 워크플로우 실행
+/halo-eval [list | <fixture> | compare <fixture> | clean]   # 회귀 테스트 (워크플로우 자체 품질 측정)
 ```
+
+`/halo-eval` 은 fixture 기반 회귀 테스트 오케스트레이터. 워크플로우 프롬프트 개선 시
+"같은 입력에 대한 품질 변화"를 숫자로 비교한다. 자세한 건 `workflow-tests/README.md`.
 
 ## Core Principles
 - **RTM = Single Source of Truth** — 매 Phase가 RTM 업데이트. JUDGE는 RTM만 읽고 판별.

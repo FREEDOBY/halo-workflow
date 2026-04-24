@@ -1,0 +1,24 @@
+{
+  "fixture": "smoke-cli-word-counter",
+  "description": "기본 happy path 회귀 테스트. 단순 Python CLI를 워크플로우가 LOOPBACK 없이 정상 완주하고, 산출 코드가 실제로 동작하는지 검증한다. 워크플로우 프롬프트 변경이 기본 흐름을 망가뜨리지 않는지 가장 먼저 확인하는 smoke fixture.",
+  "project_type": "cli-python",
+  "greenfield": true,
+  "expected": {
+    "loopback_count_max": 1,
+    "total_reqs_min": 3,
+    "all_reqs_result_pass": true,
+    "all_reqs_have_any_tc": true,
+    "all_reqs_have_impl_location": true,
+    "review_critical_max": 0,
+    "review_major_max": 1,
+    "functional_ok": true,
+    "artifacts_must_exist": [
+      "docs/requirements/*.md",
+      "docs/requirements/*-rtm.md",
+      "docs/architecture/*.md",
+      "src/**/*.py",
+      "tests/unit/**/*.py",
+      "reports/*-completion.md"
+    ]
+  }
+}

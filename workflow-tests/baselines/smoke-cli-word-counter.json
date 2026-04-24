@@ -1,0 +1,140 @@
+{
+  "fixture": "smoke-cli-word-counter",
+  "evaluated_at": "2026-04-24T14:01:50",
+  "workspace": "C:\\AutomationTool\\halo-workflow\\workflow-tests\\runs\\smoke-cli-word-counter\\2026-04-24_10-17-04\\artifacts",
+  "state": {
+    "feature": "word-counter",
+    "current_phase": "P9",
+    "loopback_count": 1,
+    "loopback_per_phase": {
+      "P5": 1
+    },
+    "completed_phases": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6",
+      "P7",
+      "P8",
+      "P9"
+    ],
+    "greenfield": true,
+    "rtm_path": "docs/requirements/word-counter-rtm.md",
+    "started_at": "2026-04-24",
+    "completed_at": "2026-04-24",
+    "status": "Complete"
+  },
+  "rtm": {
+    "total_reqs": 5,
+    "result_pass": 5,
+    "unit_tc_mapped": 4,
+    "any_tc_mapped": 5,
+    "impl_location_mapped": 5,
+    "integration_tc_mapped": 5,
+    "e2e_tc_mapped": 4,
+    "review_ok": 5,
+    "rtm_path": "docs/requirements/word-counter-rtm.md"
+  },
+  "review": {
+    "exists": true,
+    "file": ".workflow/reviews/P8-cycle-1.md",
+    "cycle": 1,
+    "CRITICAL": 0,
+    "MAJOR": 0,
+    "MINOR": 5
+  },
+  "artifacts": {
+    "docs/requirements/*.md": 2,
+    "docs/requirements/*-rtm.md": 1,
+    "docs/architecture/*.md": 1,
+    "src/**/*.py": 4,
+    "tests/unit/**/*.py": 2,
+    "reports/*-completion.md": 1
+  },
+  "functional": {
+    "ran": true,
+    "ok": true,
+    "exit_code": 0,
+    "stdout": "entrypoint: C:\\Python313\\python.exe -m word_counter  (cwd=C:\\AutomationTool\\halo-workflow\\workflow-tests\\runs\\smoke-cli-word-counter\\2026-04-24_10-17-04\\artifacts\\src)\n--- --top 3 ---\nthe\t4\nhello\t3\ndog\t2\n\n--- --top 1 ---\nthe\t4\n\nfunctional: OK\n",
+    "stderr": ""
+  },
+  "oracle_checks": [
+    {
+      "name": "loopback_count <= 1",
+      "pass": true,
+      "detail": "actual=1"
+    },
+    {
+      "name": "total_reqs >= 3",
+      "pass": true,
+      "detail": "actual=5"
+    },
+    {
+      "name": "all_reqs_result_pass",
+      "pass": true,
+      "detail": "5/5"
+    },
+    {
+      "name": "all_reqs_have_any_tc",
+      "pass": true,
+      "detail": "5/5"
+    },
+    {
+      "name": "all_reqs_have_impl_location",
+      "pass": true,
+      "detail": "5/5"
+    },
+    {
+      "name": "review_critical <= 0",
+      "pass": true,
+      "detail": "actual=0"
+    },
+    {
+      "name": "review_major <= 1",
+      "pass": true,
+      "detail": "actual=0"
+    },
+    {
+      "name": "functional_ok",
+      "pass": true,
+      "detail": "exit=0"
+    },
+    {
+      "name": "artifact exists: docs/requirements/*.md",
+      "pass": true,
+      "detail": "matches=2"
+    },
+    {
+      "name": "artifact exists: docs/requirements/*-rtm.md",
+      "pass": true,
+      "detail": "matches=1"
+    },
+    {
+      "name": "artifact exists: docs/architecture/*.md",
+      "pass": true,
+      "detail": "matches=1"
+    },
+    {
+      "name": "artifact exists: src/**/*.py",
+      "pass": true,
+      "detail": "matches=4"
+    },
+    {
+      "name": "artifact exists: tests/unit/**/*.py",
+      "pass": true,
+      "detail": "matches=2"
+    },
+    {
+      "name": "artifact exists: reports/*-completion.md",
+      "pass": true,
+      "detail": "matches=1"
+    }
+  ],
+  "oracle_result": {
+    "passed": 14,
+    "total": 14,
+    "all_pass": true
+  }
+}
