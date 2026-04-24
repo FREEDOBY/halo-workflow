@@ -160,10 +160,13 @@ def check_artifacts(patterns, workspace):
 def move_artifacts(workspace, dest_dir):
     """Move workflow-generated content from workspace into dest_dir.
 
-    Preserves scaffolding: the top-level directories (docs/, src/, etc.)
-    and any .gitkeep files stay in the workspace — only their workflow-
-    generated children are moved. Returns the list of top-level names
-    from which something was actually moved.
+    Preserves scaffolding: .gitkeep files stay wherever they are, and any
+    directory that holds (or ultimately contains) a .gitkeep is kept in
+    the workspace. Directories whose sole purpose was to hold moved
+    artifacts are cleaned up.
+
+    Returns the list of top-level directory names from which something
+    was actually moved.
     """
     dest_dir.mkdir(parents=True, exist_ok=True)
     moved = []
@@ -171,15 +174,39 @@ def move_artifacts(workspace, dest_dir):
         src = workspace / name
         if not src.exists() or not src.is_dir():
             continue
-        children = [c for c in src.iterdir() if c.name != ".gitkeep"]
-        if not children:
-            continue
-        target = dest_dir / name
-        target.mkdir(parents=True, exist_ok=True)
-        for child in children:
-            shutil.move(str(child), str(target / child.name))
-        moved.append(name)
+        if _move_tree(src, dest_dir / name):
+            moved.append(name)
     return moved
+
+
+def _move_tree(src, dst):
+    """Recursively move non-.gitkeep content from src into dst.
+
+    Files named .gitkeep are left in place. Directories that end up
+    fully empty after the move are removed from src (they were pure
+    artifact containers). Directories still containing a .gitkeep or
+    any other preserved content are kept.
+
+    Returns True if anything was moved.
+    """
+    something_moved = False
+    for child in list(src.iterdir()):
+        if child.is_file():
+            if child.name == ".gitkeep":
+                continue
+            dst.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(child), str(dst / child.name))
+            something_moved = True
+        elif child.is_dir():
+            if _move_tree(child, dst / child.name):
+                something_moved = True
+            # Clean up purely empty directories; dirs retaining a
+            # .gitkeep or any other content are preserved.
+            try:
+                child.rmdir()
+            except OSError:
+                pass
+    return something_moved
 
 
 def run_verify(script, artifacts_path, run_dir, repo_root):
