@@ -111,6 +111,26 @@ python workflow-tests/scripts/compare.py <fixture>
 4. `oracle.json`의 `greenfield` 필드 확인:
    - `true` 면 워크플로우의 Greenfield 경로로 진행될 예정임을 인지.
 
+### Step 1.5 — Brownfield 베이스라인 적용 (조건부)
+
+**조건**: oracle.json 의 `greenfield` 가 `false` AND fixture 디렉토리에 `baseline/` 이 존재.
+
+이 단계가 끝나면 워크스페이스는 "이전 사이클이 끝난 직후" 상태가 된다 — 사전 코드 + 이전 RTM + 이전 completion report 모두 배치. Step 2 워크플로우는 그 위에서 Brownfield 로 진행되며, P2 step 6 가 이전 산출물을 자동으로 발견해 P3 입력으로 전달한다.
+
+**동작**:
+
+1. oracle.json 의 `greenfield` 가 `true` 이거나 fixture 디렉토리에 `baseline/` 이 없으면 이 step 전체 스킵.
+2. baseline 내용을 워크스페이스로 복사 (구조 보존):
+   ```bash
+   cp -r workflow-tests/fixtures/<fixture>/baseline/. .
+   ```
+3. 복사 완료 후 검증: 적어도 `src/` 또는 `tests/` 에 파일이 1개 이상 존재 (워크플로우 P1 의 Brownfield 감지가 트리거되도록).
+4. 보고: "Baseline applied: N files".
+
+**주의**:
+- `.workflow/` 는 baseline 에 두지 않는다 — 워크플로우 state 는 항상 새로 시작.
+- baseline 의 prior RTM 과 completion report 는 워크플로우 P2 step 6 가 자동 발견하도록 둔다 (별도 처리 불필요).
+
 ### Step 2 — 워크플로우 실행
 
 `.claude/commands/halo-workflow.md` 의 **EXECUTION PROTOCOL 전체** (PHASE 1 ~ PHASE 9) 를 그대로 따라 실행한다.

@@ -1,0 +1,1 @@
+기존 config loader (`src/configloader/`) 에 환경 변수 오버라이드 기능을 추가해줘. `CONFIG_OVERRIDE_<KEY>` 형식의 환경 변수가 설정되어 있으면 설정 파일의 동일 키를 덮어쓴다 (예: `CONFIG_OVERRIDE_PORT=9090` 이면 파일에 `port: 8080` 이 있어도 결과는 9090). 키 매칭은 대소문자 구분 없음. `load_config(path)` 시그니처는 유지하고, 내부 동작에 환경 변수 검사 단계를 추가한다. 기존 3개 REQ 의 동작은 변경되지 않아야 한다.

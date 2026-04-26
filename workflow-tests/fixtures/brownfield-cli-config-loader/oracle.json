@@ -1,0 +1,22 @@
+{
+  "fixture": "brownfield-cli-config-loader",
+  "description": "Brownfield 회귀 테스트. 기존 config-loader 사이클이 완료된 워크스페이스에서 환경 변수 오버라이드 기능을 추가한다. P2 step 6 (이전 사이클의 RTM 과 completion report 자동 발견) 이 동작하는지, 기존 코드/테스트를 깨뜨리지 않고 새 기능을 추가하는지 검증한다.",
+  "project_type": "cli-python",
+  "greenfield": false,
+  "expected": {
+    "loopback_count_max": 2,
+    "total_reqs_min": 1,
+    "all_reqs_result_pass": true,
+    "all_reqs_have_any_tc": true,
+    "all_reqs_have_impl_location": true,
+    "review_critical_max": 0,
+    "review_major_max": 1,
+    "functional_ok": true,
+    "artifacts_must_exist": [
+      "docs/requirements/*-rtm.md",
+      "src/configloader/loader.py",
+      "tests/unit/**/*.py",
+      "reports/*-completion.md"
+    ]
+  }
+}

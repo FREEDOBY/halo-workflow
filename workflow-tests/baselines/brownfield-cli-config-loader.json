@@ -1,0 +1,137 @@
+{
+  "fixture": "brownfield-cli-config-loader",
+  "evaluated_at": "2026-04-26T11:18:59",
+  "workspace": "C:\\AutomationTool\\halo-workflow",
+  "state": {
+    "feature": "env-override",
+    "current_phase": "P9",
+    "loopback_count": 1,
+    "loopback_per_phase": {
+      "P5": 1
+    },
+    "completed_phases": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5_cycle1",
+      "P6_cycle1",
+      "P7_cycle1",
+      "P8_cycle1",
+      "P9"
+    ],
+    "greenfield": false,
+    "rtm_path": "docs/requirements/env-override-rtm.md",
+    "started_at": "2026-04-26",
+    "completed_at": "2026-04-26",
+    "status": "Complete"
+  },
+  "rtm": {
+    "total_reqs": 4,
+    "result_pass": 4,
+    "unit_tc_mapped": 4,
+    "any_tc_mapped": 4,
+    "impl_location_mapped": 4,
+    "integration_tc_mapped": 3,
+    "e2e_tc_mapped": 3,
+    "review_ok": 4,
+    "rtm_path": "docs/requirements/env-override-rtm.md"
+  },
+  "review": {
+    "exists": true,
+    "file": ".workflow/reviews/P8-cycle-1.md",
+    "cycle": 1,
+    "CRITICAL": 0,
+    "MAJOR": 0,
+    "MINOR": 4
+  },
+  "artifacts": {
+    "docs/requirements/*-rtm.md": 2,
+    "src/configloader/loader.py": 1,
+    "tests/unit/**/*.py": 2,
+    "reports/*-completion.md": 2
+  },
+  "archived_artifacts": [
+    "docs",
+    "src",
+    "tests",
+    "reports",
+    ".workflow"
+  ],
+  "archived_artifacts_dir": "workflow-tests/runs/brownfield-cli-config-loader/2026-04-26_11-18-59/artifacts",
+  "functional": {
+    "ran": true,
+    "ok": true,
+    "exit_code": 0,
+    "stdout": "Test 1 OK: baseline load works (port=8080)\nTest 2 OK: env override works (port=9090)\n",
+    "stderr": "",
+    "log_file": "workflow-tests/runs/brownfield-cli-config-loader/2026-04-26_11-18-59/verify.log"
+  },
+  "oracle_checks": [
+    {
+      "name": "loopback_count <= 2",
+      "pass": true,
+      "detail": "actual=1"
+    },
+    {
+      "name": "total_reqs >= 1",
+      "pass": true,
+      "detail": "actual=4"
+    },
+    {
+      "name": "all_reqs_result_pass",
+      "pass": true,
+      "detail": "4/4"
+    },
+    {
+      "name": "all_reqs_have_any_tc",
+      "pass": true,
+      "detail": "4/4"
+    },
+    {
+      "name": "all_reqs_have_impl_location",
+      "pass": true,
+      "detail": "4/4"
+    },
+    {
+      "name": "review_critical <= 0",
+      "pass": true,
+      "detail": "actual=0"
+    },
+    {
+      "name": "review_major <= 1",
+      "pass": true,
+      "detail": "actual=0"
+    },
+    {
+      "name": "functional_ok",
+      "pass": true,
+      "detail": "exit=0"
+    },
+    {
+      "name": "artifact exists: docs/requirements/*-rtm.md",
+      "pass": true,
+      "detail": "matches=2"
+    },
+    {
+      "name": "artifact exists: src/configloader/loader.py",
+      "pass": true,
+      "detail": "matches=1"
+    },
+    {
+      "name": "artifact exists: tests/unit/**/*.py",
+      "pass": true,
+      "detail": "matches=2"
+    },
+    {
+      "name": "artifact exists: reports/*-completion.md",
+      "pass": true,
+      "detail": "matches=2"
+    }
+  ],
+  "oracle_result": {
+    "passed": 12,
+    "total": 12,
+    "all_pass": true
+  }
+}

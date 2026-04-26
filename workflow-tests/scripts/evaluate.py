@@ -42,8 +42,15 @@ def find_rtm(workspace):
     req_dir = workspace / "docs" / "requirements"
     if not req_dir.exists():
         return None
-    matches = sorted(req_dir.glob("*-rtm.md"))
-    return matches[0] if matches else None
+    matches = list(req_dir.glob("*-rtm.md"))
+    if not matches:
+        return None
+    # Newest by modification time wins. For brownfield fixtures the
+    # workspace contains the baseline RTM (older mtime) plus the RTM
+    # produced by the current workflow run (fresh mtime); we want the
+    # latter for evaluation.
+    matches.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return matches[0]
 
 
 def parse_rtm(rtm_path):
@@ -479,18 +486,18 @@ def main():
         if args.keep_artifacts:
             metrics["archived_artifacts"] = []
             metrics["archived_artifacts_skipped_reason"] = "--keep-artifacts"
-        elif oracle.get("greenfield") is True:
+        else:
+            # Move all workflow-touched content into the run archive. For
+            # brownfield fixtures, /halo-eval has copied fixtures/<name>/
+            # baseline/ into the workspace before the workflow ran, so
+            # everything currently in the workspace is fair game to move:
+            # the canonical baseline lives in the fixture, not the workspace.
             moved = move_artifacts(workspace, run_dir / "artifacts")
             metrics["archived_artifacts"] = moved
             metrics["archived_artifacts_dir"] = str(
                 (run_dir / "artifacts").relative_to(tests_root.parent)
             ).replace("\\", "/")
             artifacts_path = run_dir / "artifacts"
-        else:
-            metrics["archived_artifacts"] = []
-            metrics["archived_artifacts_skipped_reason"] = (
-                "fixture is not greenfield; artifact move not yet supported"
-            )
 
     # ---- Functional verify (run verify.py against artifacts) ------------
     verify_script = fixture_dir / "verify.py"

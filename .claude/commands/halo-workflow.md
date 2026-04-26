@@ -404,6 +404,11 @@ greenfield == false → Execute below.
 3. Architecture (Read entry points, service layers)
 4. Test patterns (examine existing test structure)
 5. Read key files directly
+6. Prior HALO cycle artifacts (multi-chunk continuity):
+   - Glob: `reports/*-completion.md` and `docs/requirements/*-rtm.md`
+   - Read all matches (these documents are kept small by design)
+   - Summarize in P2.md "Prior Cycle Context" section: per-cycle feature name + 1-2 line key decisions
+   - Pass to P3 as informational context only — P3 judges relevance against the new requirement, no automatic application
 ```
 
 #### 2.2 Completion

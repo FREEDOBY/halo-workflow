@@ -14,6 +14,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Python bytecode (esp. from fixture baseline pytest sanity runs)
+__pycache__/
+*.pyc
+
 # Reference materials (local only)
 ref/
 
